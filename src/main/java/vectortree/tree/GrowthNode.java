@@ -274,7 +274,9 @@ public class GrowthNode {
 	public void newNode() {
 		GrowthNode gn = new GrowthNode(growMan, this);
 		childNodes.add(gn);
-		growMan.activeGrowths.add(gn);
+		//TODO: find out why i was redesigning this 
+		//i think this class was being phased out actually, profiled version is replacement and used instead of this class
+		//growMan.activeGrowths.add(gn);
 	}
 	
 	public boolean isActive() {

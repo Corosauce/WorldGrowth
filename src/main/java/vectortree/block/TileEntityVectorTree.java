@@ -2,8 +2,10 @@ package vectortree.block;
 
 import java.util.Random;
 
+import CoroUtil.world.WorldDirectorManager;
+import vectortree.simulation.TreeSimulation;
 import vectortree.tree.GrowthManager;
-
+import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -29,7 +31,9 @@ public class TileEntityVectorTree extends TileEntity
     public void init() {
     	hasInit = true;
     	
-    	growMan = new GrowthManager(worldObj, new ChunkCoordinates(xCoord, yCoord, zCoord));
+    	//growMan = new GrowthManager(worldObj, new ChunkCoordinates(xCoord, yCoord, zCoord));
+    	worldObj.setBlock(xCoord, yCoord+1, zCoord, Blocks.log2);
+    	WorldDirectorManager.instance().getCoroUtilWorldDirector(worldObj).addTickingLocation(new TreeSimulation(worldObj.provider.dimensionId, new ChunkCoordinates(xCoord, yCoord+1, zCoord)));
     }
     
     public void onClicked() {

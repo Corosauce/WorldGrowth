@@ -1,6 +1,7 @@
 package vectortree.forge;
 
 import net.minecraft.block.Block;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
@@ -67,6 +68,7 @@ public class VectorTree {
     public void load(FMLInitializationEvent event)
     {
     	proxy.init(this);
+    	MinecraftForge.EVENT_BUS.register(new EventHandlerForge());
     	FMLCommonHandler.instance().bus().register(new EventHandlerFML());
     	
     }
