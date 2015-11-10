@@ -1,5 +1,6 @@
 package vectortree.forge;
 
+import vectortree.simulation.TreeSimulation;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
@@ -11,6 +12,7 @@ import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent.Save;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.grid.block.BlockDataPoint;
+import CoroUtil.world.location.ISimulationTickable;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -40,7 +42,7 @@ public class EventHandlerForge {
 						//add depending on a weight?
 						bdp.walkedOnAmount += 0.25F;
 						
-						System.out.println("inc walk amount: " + bdp.walkedOnAmount);
+						//System.out.println("inc walk amount: " + bdp.walkedOnAmount);
 						
 						if (bdp.walkedOnAmount > 5F) {
 							//System.out.println("dirt!!!");
@@ -58,6 +60,19 @@ public class EventHandlerForge {
 	@SubscribeEvent
 	public void chunkLoad(ChunkEvent.Load event) {
 		//TODO: get list of ISimulationTickable to pass this event to
+		
+		if (!event.world.isRemote) {
+			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).lookupTickingManagedLocations.values()) {
+				if (ticker instanceof TreeSimulation) {
+					TreeSimulation tree = (TreeSimulation) ticker;
+					if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
+						if (tree.getOrigin().posX / 16 == event.getChunk().xPosition && tree.getOrigin().posZ / 16 == event.getChunk().zPosition) {
+							tree.syncChunkFromData();
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	@SubscribeEvent

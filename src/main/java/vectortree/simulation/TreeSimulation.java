@@ -29,8 +29,12 @@ public class TreeSimulation implements ISimulationTickable {
 	private int tickRate = 20;
 	
 	//quick test vars, to be located into a node tree system
-	private int branchLength = 1;
+	private int branchLength = 0;
 	private int branchLengthMax = 10;
+	
+	public TreeSimulation() {
+		//needed for generic init
+	}
 	
 	public TreeSimulation(int dimID, ChunkCoordinates origin) {
 		this.dimID = dimID;
@@ -93,7 +97,7 @@ public class TreeSimulation implements ISimulationTickable {
 	 * 
 	 */
 	public void syncChunkFromData() {
-		
+		System.out.println("received chunk load event for this tree");
 	}
 	
 	public World getWorld() {
@@ -106,14 +110,21 @@ public class TreeSimulation implements ISimulationTickable {
 
 	@Override
 	public void readFromNBT(NBTTagCompound parData) {
-		// TODO Auto-generated method stub
-
+		dimID = parData.getInteger("dimID");
+		origin = new ChunkCoordinates(parData.getInteger("originX"), parData.getInteger("originY"), parData.getInteger("originZ"));
+		System.out.println("loaded tree origin as: " + origin.toString());
 	}
 
 	@Override
 	public void writeToNBT(NBTTagCompound parData) {
-		// TODO Auto-generated method stub
-
+		
+		parData.setString("classname", this.getClass().getCanonicalName());
+		
+		parData.setInteger("dimID", dimID);
+		parData.setInteger("originX", origin.posX);
+		parData.setInteger("originY", origin.posY);
+		parData.setInteger("originZ", origin.posZ);
+		System.out.println("written out tree data");
 	}
 
 	@Override
