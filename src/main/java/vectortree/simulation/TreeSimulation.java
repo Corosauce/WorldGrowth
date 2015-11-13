@@ -71,9 +71,6 @@ public class TreeSimulation implements ISimulationTickable {
 			System.out.println("branchLength: " + branchLength);
 			
 			pushDataChange(new BlockDataEntry(new ChunkCoordinates(origin.posX, origin.posY+branchLength, origin.posZ), Blocks.log2));
-			/*if (canLiveUpdate()) {
-				getWorld().setBlock(origin.posX, origin.posY+branchLength, origin.posZ, Blocks.log2);
-			}*/
 			
 			if (branchLength == branchLengthMax) {
 				System.out.println("tree hit max");
@@ -126,11 +123,6 @@ public class TreeSimulation implements ISimulationTickable {
 	 * 
 	 */
 	public void syncChunkFromData(Chunk chunk) {
-		//System.out.println("received chunk load event for chunk: " + chunk.xPosition + " - " + chunk.zPosition);
-		
-		/*if (chunk.xPosition > 600) {
-			System.out.println("WAT");
-		}*/
 		
 		Iterator it = lookupDataPending.entrySet().iterator();
 		while (it.hasNext()) {
@@ -138,9 +130,7 @@ public class TreeSimulation implements ISimulationTickable {
 			if (entry.getKey().posX / 16 == chunk.xPosition && entry.getKey().posZ / 16 == chunk.zPosition) {
 				System.out.println("found a pending update for coord " + entry.getKey().toString());
 				pushLiveChange(entry.getValue());
-
-				//TODO: REMOVE ENTRY!!! confirm if this is best practice
-				//lookupDataPending.remove(entry.getKey());
+				
 				it.remove();
 				
 			}
