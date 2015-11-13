@@ -66,9 +66,10 @@ public class EventHandlerForge {
 				if (ticker instanceof TreeSimulation) {
 					TreeSimulation tree = (TreeSimulation) ticker;
 					if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
-						if (tree.getOrigin().posX / 16 == event.getChunk().xPosition && tree.getOrigin().posZ / 16 == event.getChunk().zPosition) {
-							tree.syncChunkFromData();
-						}
+						//dont compare origin just pass the chunk thats loading, in future consider a 'chunk load listener' system for simulated trees to save having to do a full iteration
+						//if (tree.getOrigin().posX / 16 == event.getChunk().xPosition && tree.getOrigin().posZ / 16 == event.getChunk().zPosition) {
+							tree.syncChunkFromData(event.getChunk());
+						//}
 					}
 				}
 			}

@@ -1,9 +1,15 @@
 package vectortree.simulation;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.DimensionManager;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.location.ISimulationTickable;
@@ -30,7 +36,12 @@ public class TreeSimulation implements ISimulationTickable {
 	
 	//quick test vars, to be located into a node tree system
 	private int branchLength = 0;
-	private int branchLengthMax = 10;
+	private int branchLengthMax = 50;
+	
+	//stores data about location for all touched coords
+	private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataAll = new HashMap<ChunkCoordinates, BlockDataEntry>();
+	//stores data about unupdated location pending changing once chunk loads
+	private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataPending = new HashMap<ChunkCoordinates, BlockDataEntry>();
 	
 	public TreeSimulation() {
 		//needed for generic init
@@ -59,9 +70,10 @@ public class TreeSimulation implements ISimulationTickable {
 			
 			System.out.println("branchLength: " + branchLength);
 			
-			if (canLiveUpdate()) {
+			pushDataChange(new BlockDataEntry(new ChunkCoordinates(origin.posX, origin.posY+branchLength, origin.posZ), Blocks.log2));
+			/*if (canLiveUpdate()) {
 				getWorld().setBlock(origin.posX, origin.posY+branchLength, origin.posZ, Blocks.log2);
-			}
+			}*/
 			
 			if (branchLength == branchLengthMax) {
 				System.out.println("tree hit max");
@@ -69,11 +81,28 @@ public class TreeSimulation implements ISimulationTickable {
 		}
 	}
 	
+	public void pushDataChange(BlockDataEntry data) {
+		lookupDataAll.put(data.getCoords(), data);
+		if (canLiveUpdate()) {
+			System.out.println("performing live change at " + data.getCoords());
+			pushLiveChange(data);
+		} else {
+			System.out.println("performing pending change at " + data.getCoords());
+			lookupDataPending.put(data.getCoords(), data);
+		}
+	}
+	
+	public void pushLiveChange(BlockDataEntry data) {
+		getWorld().setBlock(data.getCoords().posX, data.getCoords().posY, data.getCoords().posZ, data.getBlock(), data.getMeta(), 3);
+	}
+	
 	public boolean isActive() {
 		return branchLength < branchLengthMax;
 	}
 	
 	public boolean isValid() {
+		//TODO: consider rewriting this validation to use cached data only
+		if (!getWorld().blockExists(origin.posX, origin.posY, origin.posZ)) return true;
 		if (getWorld().getBlock(origin.posX, origin.posY, origin.posZ) != Blocks.log2) {
 			return false;
 		}
@@ -96,8 +125,26 @@ public class TreeSimulation implements ISimulationTickable {
 	 * For updating block data when a chunk loads up
 	 * 
 	 */
-	public void syncChunkFromData() {
-		System.out.println("received chunk load event for this tree");
+	public void syncChunkFromData(Chunk chunk) {
+		//System.out.println("received chunk load event for chunk: " + chunk.xPosition + " - " + chunk.zPosition);
+		
+		/*if (chunk.xPosition > 600) {
+			System.out.println("WAT");
+		}*/
+		
+		Iterator it = lookupDataPending.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<ChunkCoordinates, BlockDataEntry> entry = (Entry<ChunkCoordinates, BlockDataEntry>) it.next();
+			if (entry.getKey().posX / 16 == chunk.xPosition && entry.getKey().posZ / 16 == chunk.zPosition) {
+				System.out.println("found a pending update for coord " + entry.getKey().toString());
+				pushLiveChange(entry.getValue());
+
+				//TODO: REMOVE ENTRY!!! confirm if this is best practice
+				//lookupDataPending.remove(entry.getKey());
+				it.remove();
+				
+			}
+		}
 	}
 	
 	public World getWorld() {
