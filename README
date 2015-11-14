@@ -12,9 +12,12 @@ internal:
 - consider separating design up more so any tickable simulation feature can implement scheduled ticking and staggered chunk updating
 - scheduled ticking of simulation
 - staggered updating of data to chunk data
+-- need to maintain a list of chunks we need to keep track of, use this to decide how to propegate chunk updates
 - granular adjustments based on evaluated pc performance
 -- adjust based on loaded chunk count and pc performance
 - how to stagger reading of chunk data for simulation
+
+- solve chunk watching list and thread update queue for immidiate updates for thread to world at same time...
 
 
 tree:
@@ -38,3 +41,18 @@ testing:
 
 - find out average performance capability and work out a block update rate based on it
 - decide on target idea amount of players, 4? max handling of 10 before heavy degredation based on average pc?
+
+
+
+
+
+
+brain dump:
+===========
+
+- when chunk loads we cant process right away, must push changes asyncronously 
+- when threaded sim wants to push a change, if chunk is loaded, must push changes asyncronously 
+- so when threaded sim does work, it should just push the change to a update queue
+- update queue handler determines if we can push change now or have to wait till chunk is loaded
+
+- need to work out a way to efficiently iterate list of potential updates based on loaded chunks we are watching

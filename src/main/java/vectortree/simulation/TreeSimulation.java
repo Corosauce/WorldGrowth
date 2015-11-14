@@ -48,8 +48,17 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	//stores data about location for all touched coords
 	private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataAll = new HashMap<ChunkCoordinates, BlockDataEntry>();
 	//stores data about unupdated location pending changing once chunk loads
+	@Deprecated
 	private List<ChunkCoordinates> listPending = new ArrayList<ChunkCoordinates>();
 	//private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataPending = new HashMap<ChunkCoordinates, BlockDataEntry>();
+	
+	//for organizing pending updates based on the chunk its in
+	private HashMap<ChunkCoordinates, List<ChunkCoordinates>> lookupChunkToBlockCoordsForPendingUpdate = new HashMap<ChunkCoordinates, List<ChunkCoordinates>>();
+	
+	//list of loaded chunks we need to tick for updates while we can, used for lookupChunkToBlockCoordsForPendingUpdate
+	//this list is maintained by chunk load and unload events and if that chunk is in the lookup for pending updates...
+	//TODO: make sure that if chunk is already loaded when entry is added to lookup pending, we check to see if we need to add that chunk into this list
+	private List<ChunkCoordinates> listChunksToTick;
 	
 	public TreeSimulation() {
 		//needed for generic init
@@ -63,9 +72,7 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	@Override
 	public void tickUpdate() {
 		if (isValid()) {
-			if (getWorld().getTotalWorldTime() % tickRateSimulation == 0) {
-				tickSimulate();
-			}
+			
 			if (getWorld().getTotalWorldTime() % tickRateUpdateWorld == 0) {
 				tickApplyWorldChanges();
 			}
@@ -73,6 +80,14 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 			System.out.println("invalid! removing");
 			destroy();
 		}
+	}
+
+	@Override
+	public void tickUpdateThreaded() {
+		//for now, rate ticking is handled in the world director
+		//if (getWorld().getTotalWorldTime() % tickRateSimulation == 0) {
+			tickSimulate();
+		//}
 	}
 	
 	public void tickSimulate() {
@@ -237,6 +252,11 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	@Override
 	public ChunkCoordinates getOrigin() {
 		return origin;
+	}
+
+	@Override
+	public boolean isThreaded() {
+		return true;
 	}
 
 }
