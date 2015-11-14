@@ -59,18 +59,18 @@ public class EventHandlerForge {
 	
 	@SubscribeEvent
 	public void chunkLoad(ChunkEvent.Load event) {
-		//TODO: get list of ISimulationTickable to pass this event to
+		//TODO: get list of ISimulationTickable to pass this event to more efficiently
 		
 		if (!event.world.isRemote) {
 			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).lookupTickingManagedLocations.values()) {
 				if (ticker instanceof TreeSimulation) {
 					TreeSimulation tree = (TreeSimulation) ticker;
-					if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
+					//if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
 						//dont compare origin just pass the chunk thats loading, in future consider a 'chunk load listener' system for simulated trees to save having to do a full iteration
 						//if (tree.getOrigin().posX / 16 == event.getChunk().xPosition && tree.getOrigin().posZ / 16 == event.getChunk().zPosition) {
-							tree.syncChunkFromData(event.getChunk());
+							tree.hookChunkLoad(event.getChunk());
 						//}
-					}
+					//}
 				}
 			}
 		}
@@ -78,6 +78,15 @@ public class EventHandlerForge {
 	
 	@SubscribeEvent
 	public void chunkUnload(ChunkEvent.Unload event) {
-		
+		if (!event.world.isRemote) {
+			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).lookupTickingManagedLocations.values()) {
+				if (ticker instanceof TreeSimulation) {
+					TreeSimulation tree = (TreeSimulation) ticker;
+					//if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
+						tree.hookChunkUnload(event.getChunk());
+					//}
+				}
+			}
+		}
 	}
 }

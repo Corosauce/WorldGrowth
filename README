@@ -1,4 +1,4 @@
-Simulation layer detached from world chunks and main server thread, for purpose of running simulations in and outside loaded chunk areas based on most recently cached world data to include some features that uses this system, trees that grow over time, potential use of seasons, desire paths
+Simulation layer detached from world chunks and main server thread, for purpose of running simulations in and outside loaded chunk areas based on most recently cached world data. To include some features that uses this system, trees that grow over time, potential use of seasons, desire paths
 
 TODO:
 =====
@@ -9,11 +9,13 @@ design:
 internal:
 
 - threading simulation
+- consider separating design up more so any tickable simulation feature can implement scheduled ticking and staggered chunk updating
 - scheduled ticking of simulation
 - staggered updating of data to chunk data
 - granular adjustments based on evaluated pc performance
 -- adjust based on loaded chunk count and pc performance
 - how to stagger reading of chunk data for simulation
+
 
 tree:
 
@@ -23,7 +25,8 @@ tree:
 
 seasons:
 
-- way to cache data weathered elements in a chunk, eg trees, grass, snow addition and removal
+- way to cache data for weathered elements in a chunk, eg trees, grass, snow addition and removal
+- other seasonal buildup like leaves based on wind direction and tree proximity, render similar to snow
 
 desire paths:
 
@@ -34,3 +37,4 @@ testing:
 --------
 
 - find out average performance capability and work out a block update rate based on it
+- decide on target idea amount of players, 4? max handling of 10 before heavy degredation based on average pc?

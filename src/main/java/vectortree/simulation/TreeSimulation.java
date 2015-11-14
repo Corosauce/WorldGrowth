@@ -37,7 +37,9 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	private int dimID = 0;
 	private ChunkCoordinates origin = null;
 	
-	private int tickRate = 20;
+	private int tickRateSimulation = 20;
+	private int tickRateUpdateWorld = 1;
+	private int blocksPerUpdateWorldTick = 20;
 	
 	//quick test vars, to be located into a node tree system
 	private int branchLength = 0;
@@ -61,8 +63,11 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	@Override
 	public void tickUpdate() {
 		if (isValid()) {
-			if (getWorld().getTotalWorldTime() % tickRate == 0) {
-				tickUpdateAct();
+			if (getWorld().getTotalWorldTime() % tickRateSimulation == 0) {
+				tickSimulate();
+			}
+			if (getWorld().getTotalWorldTime() % tickRateUpdateWorld == 0) {
+				tickApplyWorldChanges();
 			}
 		} else {
 			System.out.println("invalid! removing");
@@ -70,18 +75,30 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 		}
 	}
 	
-	public void tickUpdateAct() {
+	public void tickSimulate() {
 		if (branchLength < branchLengthMax) {
 			branchLength++;
 			
 			System.out.println("branchLength: " + branchLength);
 			
-			pushDataChange(new BlockDataEntry(new ChunkCoordinates(origin.posX, origin.posY+branchLength, origin.posZ), Blocks.log2));
+			//push system harder for testing
+			for (int xx = -20; xx <= 20; xx++) {
+				for (int zz = -20; zz <= 20; zz++) {
+					pushDataChange(new BlockDataEntry(new ChunkCoordinates(origin.posX + xx, origin.posY+branchLength, origin.posZ + zz), Blocks.log));
+				}
+			}
+			
 			
 			if (branchLength == branchLengthMax) {
 				System.out.println("tree hit max");
 			}
 		}
+	}
+	
+	public void tickApplyWorldChanges() {
+		//we need to know what blocks we can update... keep track of chunks loaded based on load / unload events?
+		
+		
 	}
 	
 	public void pushDataChange(BlockDataEntry data) {
@@ -114,7 +131,7 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	public boolean isValid() {
 		//TODO: consider rewriting this validation to use cached data only
 		if (!getWorld().blockExists(origin.posX, origin.posY, origin.posZ)) return true;
-		if (getWorld().getBlock(origin.posX, origin.posY, origin.posZ) != Blocks.log2) {
+		if (getWorld().getBlock(origin.posX, origin.posY, origin.posZ) != Blocks.log) {
 			return false;
 		}
 		return true;
@@ -136,7 +153,7 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	 * For updating block data when a chunk loads up
 	 * 
 	 */
-	public void syncChunkFromData(Chunk chunk) {
+	public void hookChunkLoad(Chunk chunk) {
 		
 		Iterator it = listPending.iterator();
 		while (it.hasNext()) {
@@ -150,6 +167,10 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 				
 			}
 		}
+	}
+	
+	public void hookChunkUnload(Chunk chunk) {
+		
 	}
 	
 	public World getWorld() {
