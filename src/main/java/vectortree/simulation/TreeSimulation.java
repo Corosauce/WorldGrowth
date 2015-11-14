@@ -1,7 +1,9 @@
 package vectortree.simulation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -11,6 +13,9 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.DimensionManager;
+import CoroUtil.forge.CoroAI;
+import CoroUtil.util.CoroUtil;
+import CoroUtil.util.ISerializableNBT;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.location.ISimulationTickable;
 
@@ -27,7 +32,7 @@ import CoroUtil.world.location.ISimulationTickable;
  * @author Corosus
  *
  */
-public class TreeSimulation implements ISimulationTickable {
+public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	
 	private int dimID = 0;
 	private ChunkCoordinates origin = null;
@@ -41,7 +46,8 @@ public class TreeSimulation implements ISimulationTickable {
 	//stores data about location for all touched coords
 	private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataAll = new HashMap<ChunkCoordinates, BlockDataEntry>();
 	//stores data about unupdated location pending changing once chunk loads
-	private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataPending = new HashMap<ChunkCoordinates, BlockDataEntry>();
+	private List<ChunkCoordinates> listPending = new ArrayList<ChunkCoordinates>();
+	//private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataPending = new HashMap<ChunkCoordinates, BlockDataEntry>();
 	
 	public TreeSimulation() {
 		//needed for generic init
@@ -79,14 +85,22 @@ public class TreeSimulation implements ISimulationTickable {
 	}
 	
 	public void pushDataChange(BlockDataEntry data) {
-		lookupDataAll.put(data.getCoords(), data);
+		addData(data);
 		if (canLiveUpdate()) {
 			System.out.println("performing live change at " + data.getCoords());
 			pushLiveChange(data);
 		} else {
 			System.out.println("performing pending change at " + data.getCoords());
-			lookupDataPending.put(data.getCoords(), data);
+			if (listPending.contains(data.getCoords())) {
+				System.out.println("tried to add coord entry that exists already");
+			} else {
+				listPending.add(data.getCoords());
+			}
 		}
+	}
+	
+	public void addData(BlockDataEntry data) {
+		lookupDataAll.put(data.getCoords(), data);
 	}
 	
 	public void pushLiveChange(BlockDataEntry data) {
@@ -124,12 +138,13 @@ public class TreeSimulation implements ISimulationTickable {
 	 */
 	public void syncChunkFromData(Chunk chunk) {
 		
-		Iterator it = lookupDataPending.entrySet().iterator();
+		Iterator it = listPending.iterator();
 		while (it.hasNext()) {
-			Map.Entry<ChunkCoordinates, BlockDataEntry> entry = (Entry<ChunkCoordinates, BlockDataEntry>) it.next();
-			if (entry.getKey().posX / 16 == chunk.xPosition && entry.getKey().posZ / 16 == chunk.zPosition) {
-				System.out.println("found a pending update for coord " + entry.getKey().toString());
-				pushLiveChange(entry.getValue());
+			ChunkCoordinates coords = (ChunkCoordinates) it.next();
+			//Map.Entry<ChunkCoordinates, BlockDataEntry> entry = (Entry<ChunkCoordinates, BlockDataEntry>) it.next();
+			if (coords.posX / 16 == chunk.xPosition && coords.posZ / 16 == chunk.zPosition) {
+				System.out.println("found a pending update for coord " + coords.toString());
+				pushLiveChange(lookupDataAll.get(coords));
 				
 				it.remove();
 				
@@ -149,11 +164,24 @@ public class TreeSimulation implements ISimulationTickable {
 	public void readFromNBT(NBTTagCompound parData) {
 		dimID = parData.getInteger("dimID");
 		origin = new ChunkCoordinates(parData.getInteger("originX"), parData.getInteger("originY"), parData.getInteger("originZ"));
-		System.out.println("loaded tree origin as: " + origin.toString());
+		
+		NBTTagCompound nbtData = parData.getCompoundTag("simData");
+		Iterator it = nbtData.func_150296_c().iterator();
+		while (it.hasNext()) {
+			String entryName = (String) it.next();
+			NBTTagCompound nbtEntry = nbtData.getCompoundTag(entryName);
+			
+			BlockDataEntry entry = new BlockDataEntry();
+			entry.readFromNBT(nbtEntry);
+			
+			addData(entry);
+		}
+		
+		System.out.println("loaded tree origin as: " + origin.toString() + " with entry count: " + lookupDataAll.size());
 	}
 
 	@Override
-	public void writeToNBT(NBTTagCompound parData) {
+	public NBTTagCompound writeToNBT(NBTTagCompound parData) {
 		
 		parData.setString("classname", this.getClass().getCanonicalName());
 		
@@ -161,7 +189,22 @@ public class TreeSimulation implements ISimulationTickable {
 		parData.setInteger("originX", origin.posX);
 		parData.setInteger("originY", origin.posY);
 		parData.setInteger("originZ", origin.posZ);
+		
+
+		NBTTagCompound nbtData = new NBTTagCompound();
+		
+		int i = 0;
+		Iterator it = lookupDataAll.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<ChunkCoordinates, BlockDataEntry> entry = (Entry<ChunkCoordinates, BlockDataEntry>) it.next();
+			nbtData.setTag("data_" + i++, entry.getValue().writeToNBT(new NBTTagCompound()));
+		}
+		
+		parData.setTag("simData", nbtData);
+		
 		System.out.println("written out tree data");
+		
+		return parData;
 	}
 
 	@Override

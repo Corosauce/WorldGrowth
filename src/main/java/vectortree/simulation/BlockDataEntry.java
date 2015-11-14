@@ -1,7 +1,9 @@
 package vectortree.simulation;
 
 import net.minecraft.block.Block;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChunkCoordinates;
+import CoroUtil.util.ISerializableNBT;
 
 /**
  * Used to store data about a particular coordinate
@@ -11,11 +13,20 @@ import net.minecraft.util.ChunkCoordinates;
  * @author Corosus
  *
  */
-public class BlockDataEntry {
+public class BlockDataEntry implements ISerializableNBT {
 
 	private ChunkCoordinates coords;
 	private Block block;
 	private int meta;
+	
+	public BlockDataEntry() {
+		
+	}
+	
+	public BlockDataEntry(ChunkCoordinates coords, Block block) {
+		this.coords = coords;
+		this.block = block;
+	}
 	
 	public ChunkCoordinates getCoords() {
 		return coords;
@@ -41,8 +52,24 @@ public class BlockDataEntry {
 		this.meta = meta;
 	}
 
-	public BlockDataEntry(ChunkCoordinates coords, Block block) {
-		this.coords = coords;
-		this.block = block;
+	@Override
+	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+		nbt.setInteger("blockID", Block.getIdFromBlock(block));
+		nbt.setInteger("meta", meta);
+		
+    	nbt.setInteger("xCoord", coords.posX);
+    	nbt.setInteger("yCoord", coords.posY);
+    	nbt.setInteger("zCoord", coords.posZ);
+    	
+    	return nbt;
+	}
+	
+	@Override
+	public void readFromNBT(NBTTagCompound nbt) {
+		
+		block = Block.getBlockById(nbt.getInteger("blockID"));
+    	meta = nbt.getInteger("meta");
+		
+		coords = new ChunkCoordinates(nbt.getInteger("xCoord"), nbt.getInteger("yCoord"), nbt.getInteger("zCoord"));
 	}
 }

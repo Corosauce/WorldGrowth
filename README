@@ -1,0 +1,34 @@
+simulation layer detached from world chunks and main server thread, to include some features that uses this system, trees that grow over time, potential use of seasons, desire paths
+
+TODO:
+=====
+
+design:
+-------
+
+internal:
+
+- threading simulation
+- scheduled ticking of simulation
+- staggered updating of data to chunk data
+- granular adjustments based on evaluated pc performance
+-- adjust based on loaded chunk count and pc performance
+- how to stagger reading of chunk data for simulation
+
+tree:
+
+- figure out a data structure for creating tree profiles
+- how to support fruits and their stages
+
+seasons:
+
+- way to cache data weathered elements in a chunk, eg trees, grass, snow addition and removal
+
+desire paths:
+
+- simulate restoration of path
+
+testing:
+--------
+
+- find out average performance capability and work out a block update rate based on it
