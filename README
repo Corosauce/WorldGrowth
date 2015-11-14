@@ -1,4 +1,4 @@
-simulation layer detached from world chunks and main server thread, to include some features that uses this system, trees that grow over time, potential use of seasons, desire paths
+Simulation layer detached from world chunks and main server thread, for purpose of running simulations in and outside loaded chunk areas based on most recently cached world data to include some features that uses this system, trees that grow over time, potential use of seasons, desire paths
 
 TODO:
 =====
@@ -17,6 +17,7 @@ internal:
 
 tree:
 
+- study and migrate over old immediate vector tree child/parent node setup to new simulation system
 - figure out a data structure for creating tree profiles
 - how to support fruits and their stages
 
@@ -27,6 +28,7 @@ seasons:
 desire paths:
 
 - simulate restoration of path
+- move current code over to simulation system
 
 testing:
 --------
