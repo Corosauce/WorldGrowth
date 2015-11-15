@@ -1,14 +1,16 @@
 package vectortree.simulation;
 
+import io.netty.util.internal.ConcurrentSet;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -16,8 +18,6 @@ import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.DimensionManager;
-import CoroUtil.forge.CoroAI;
-import CoroUtil.util.CoroUtil;
 import CoroUtil.util.ISerializableNBT;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.location.ISimulationTickable;
@@ -49,21 +49,24 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	private int branchLengthMax = 50;
 	
 	//stores data about location for all touched coords
-	private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataAll = new HashMap<ChunkCoordinates, BlockDataEntry>();
+	//touched by: MC, THREAD
+	private ConcurrentHashMap<ChunkCoordinates, BlockDataEntry> lookupDataAll = new ConcurrentHashMap<ChunkCoordinates, BlockDataEntry>();
 	//stores data about unupdated location pending changing once chunk loads
 	@Deprecated
 	private List<ChunkCoordinates> listPending = new ArrayList<ChunkCoordinates>();
 	//private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataPending = new HashMap<ChunkCoordinates, BlockDataEntry>();
 	
 	//for organizing pending updates based on the chunk its in
-	private HashMap<ChunkCoordinates, List<ChunkCoordinates>> lookupChunkToBlockCoordsForPendingUpdate = new HashMap<ChunkCoordinates, List<ChunkCoordinates>>();
+	//touched by: MC, THREAD
+	private ConcurrentHashMap<ChunkCoordinates, Set<ChunkCoordinates>> lookupChunkToBlockCoordsForPendingUpdate = new ConcurrentHashMap<ChunkCoordinates, Set<ChunkCoordinates>>();
 	
 	//list of loaded chunks we need to tick for updates while we can, used for lookupChunkToBlockCoordsForPendingUpdate
 	//this list is maintained by chunk load and unload events and if that chunk is in the lookup for pending updates...
 	//TODO: make sure that if chunk is already loaded when entry is added to lookup pending, we check to see if we need to add that chunk into this list
 	//private List<ChunkCoordinates> listChunksToTick = Collections.synchronizedList(new ArrayList<ChunkCoordinates>());
 	//private Set<ChunkCoordinates> setChunksToTick = Collections.synchronizedSet(new HashSet<ChunkCoordinates>());
-	private Set<ChunkCoordinates> setChunksToTick = new HashSet<ChunkCoordinates>();
+	//touched by: MC, THREAD?
+	private ConcurrentSet<ChunkCoordinates> setChunksToTick = new ConcurrentSet<ChunkCoordinates>();
 	
 	public TreeSimulation() {
 		//needed for generic init
@@ -118,6 +121,9 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	public void tickApplyWorldChanges() {
 		//we need to know what blocks we can update... keep track of chunks loaded based on load / unload events?
 		
+		//TODO: needs serious thread safety fixes, current plan for this:
+		//main issue is the listCoords, need to make a copy using CopyOnWriteArrayList
+		//dont use iterator to remove, just make a new list of entries to remove, then do a removeAll on listCoords with that new list
 		
 		Iterator it = setChunksToTick.iterator();
 		while (it.hasNext()) {
@@ -125,10 +131,13 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 			
 			if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(coords)) {
 				if (lookupChunkToBlockCoordsForPendingUpdate.get(coords).size() > 0) {
-					List<ChunkCoordinates> listCoords = lookupChunkToBlockCoordsForPendingUpdate.get(coords);
+					Set<ChunkCoordinates> listCoords = lookupChunkToBlockCoordsForPendingUpdate.get(coords);
 					Iterator itUpdates = listCoords.iterator();
 					int updateCount = 0;
-					while (itUpdates.hasNext() && updateCount++ < this.tickRateUpdateWorld) {
+					
+					Set<ChunkCoordinates> listCoordsToRemove = new HashSet<ChunkCoordinates>();
+					
+					while (itUpdates.hasNext() && updateCount++ < this.blocksPerUpdateWorldTick) {
 						ChunkCoordinates coordToProcess = (ChunkCoordinates) itUpdates.next();
 						
 						BlockDataEntry data = lookupDataAll.get(coordToProcess);
@@ -139,8 +148,12 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 							System.out.println("BlockDataEntry we wanted to update to world is null, design flaw?");
 						}
 						
-						itUpdates.remove();
+						listCoordsToRemove.add(coordToProcess);
+						//itUpdates.remove();
 					}
+					
+					//remove from master list
+					listCoords.removeAll(listCoordsToRemove);
 				}
 			}
 		}
@@ -150,10 +163,10 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 		setData(data);
 		
 		//put coord of data into pending update for specific chunk coord
-		List<ChunkCoordinates> listData = null;
+		Set<ChunkCoordinates> listData = null;
 		ChunkCoordinates chunkCoord = data.getCoordsForChunk();
 		if (!lookupChunkToBlockCoordsForPendingUpdate.containsKey(chunkCoord)) {
-			listData = new ArrayList<ChunkCoordinates>();
+			listData = Collections.newSetFromMap(new ConcurrentHashMap<ChunkCoordinates, Boolean>());
 			lookupChunkToBlockCoordsForPendingUpdate.put(chunkCoord, listData);
 		} else {
 			listData = lookupChunkToBlockCoordsForPendingUpdate.get(chunkCoord);
