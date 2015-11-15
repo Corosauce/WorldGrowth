@@ -1,11 +1,14 @@
 package vectortree.simulation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -58,7 +61,9 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	//list of loaded chunks we need to tick for updates while we can, used for lookupChunkToBlockCoordsForPendingUpdate
 	//this list is maintained by chunk load and unload events and if that chunk is in the lookup for pending updates...
 	//TODO: make sure that if chunk is already loaded when entry is added to lookup pending, we check to see if we need to add that chunk into this list
-	private List<ChunkCoordinates> listChunksToTick;
+	//private List<ChunkCoordinates> listChunksToTick = Collections.synchronizedList(new ArrayList<ChunkCoordinates>());
+	//private Set<ChunkCoordinates> setChunksToTick = Collections.synchronizedSet(new HashSet<ChunkCoordinates>());
+	private Set<ChunkCoordinates> setChunksToTick = new HashSet<ChunkCoordinates>();
 	
 	public TreeSimulation() {
 		//needed for generic init
@@ -97,8 +102,8 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 			System.out.println("branchLength: " + branchLength);
 			
 			//push system harder for testing
-			for (int xx = -20; xx <= 20; xx++) {
-				for (int zz = -20; zz <= 20; zz++) {
+			for (int xx = -10; xx <= 10; xx++) {
+				for (int zz = -10; zz <= 10; zz++) {
 					pushDataChange(new BlockDataEntry(new ChunkCoordinates(origin.posX + xx, origin.posY+branchLength, origin.posZ + zz), Blocks.log));
 				}
 			}
@@ -114,11 +119,60 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 		//we need to know what blocks we can update... keep track of chunks loaded based on load / unload events?
 		
 		
+		Iterator it = setChunksToTick.iterator();
+		while (it.hasNext()) {
+			ChunkCoordinates coords = (ChunkCoordinates) it.next();
+			
+			if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(coords)) {
+				if (lookupChunkToBlockCoordsForPendingUpdate.get(coords).size() > 0) {
+					List<ChunkCoordinates> listCoords = lookupChunkToBlockCoordsForPendingUpdate.get(coords);
+					Iterator itUpdates = listCoords.iterator();
+					int updateCount = 0;
+					while (itUpdates.hasNext() && updateCount++ < this.tickRateUpdateWorld) {
+						ChunkCoordinates coordToProcess = (ChunkCoordinates) itUpdates.next();
+						
+						BlockDataEntry data = lookupDataAll.get(coordToProcess);
+						if (data != null) {
+							System.out.println("pushing live change, count for this tick: " + updateCount);
+							pushLiveChange(data);
+						} else {
+							System.out.println("BlockDataEntry we wanted to update to world is null, design flaw?");
+						}
+						
+						itUpdates.remove();
+					}
+				}
+			}
+		}
 	}
 	
 	public void pushDataChange(BlockDataEntry data) {
-		addData(data);
-		if (canLiveUpdate()) {
+		setData(data);
+		
+		//put coord of data into pending update for specific chunk coord
+		List<ChunkCoordinates> listData = null;
+		ChunkCoordinates chunkCoord = data.getCoordsForChunk();
+		if (!lookupChunkToBlockCoordsForPendingUpdate.containsKey(chunkCoord)) {
+			listData = new ArrayList<ChunkCoordinates>();
+			lookupChunkToBlockCoordsForPendingUpdate.put(chunkCoord, listData);
+		} else {
+			listData = lookupChunkToBlockCoordsForPendingUpdate.get(chunkCoord);
+		}
+		
+		//finally add the specific location we need to update to the list for that chunk
+		listData.add(data.getCoords());
+		
+		if (!setChunksToTick.contains(chunkCoord)) {
+
+			//need to know if chunk is active in a thread safe way before we can attempt to mark chunk to be ticked
+			//TODO: put chunk exists requests through queue to server thread when that side is complete, for now risk a CME
+			if (getWorld().blockExists(data.getCoords().posX, data.getCoords().posY, data.getCoords().posZ)) {
+				System.out.println("marking chunk coord for ticking: " + chunkCoord);
+				setChunksToTick.add(chunkCoord);
+			}
+		}
+		
+		/*if (canLiveUpdate()) {
 			System.out.println("performing live change at " + data.getCoords());
 			pushLiveChange(data);
 		} else {
@@ -128,10 +182,10 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 			} else {
 				listPending.add(data.getCoords());
 			}
-		}
+		}*/
 	}
 	
-	public void addData(BlockDataEntry data) {
+	public void setData(BlockDataEntry data) {
 		lookupDataAll.put(data.getCoords(), data);
 	}
 	
@@ -170,7 +224,14 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 	 */
 	public void hookChunkLoad(Chunk chunk) {
 		
-		Iterator it = listPending.iterator();
+		ChunkCoordinates chunkCoord = new ChunkCoordinates(chunk.xPosition, 0, chunk.zPosition);
+		if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(chunkCoord) && lookupChunkToBlockCoordsForPendingUpdate.get(chunkCoord).size() > 0) {
+			if (!setChunksToTick.contains(chunkCoord)) {
+				setChunksToTick.add(chunkCoord);
+			}
+		}
+		
+		/*Iterator it = listPending.iterator();
 		while (it.hasNext()) {
 			ChunkCoordinates coords = (ChunkCoordinates) it.next();
 			//Map.Entry<ChunkCoordinates, BlockDataEntry> entry = (Entry<ChunkCoordinates, BlockDataEntry>) it.next();
@@ -181,11 +242,15 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 				it.remove();
 				
 			}
-		}
+		}*/
 	}
 	
 	public void hookChunkUnload(Chunk chunk) {
 		
+		ChunkCoordinates chunkCoord = new ChunkCoordinates(chunk.xPosition, 0, chunk.zPosition);
+		if (setChunksToTick.contains(chunkCoord)) {
+			setChunksToTick.remove(chunkCoord);
+		}
 	}
 	
 	public World getWorld() {
@@ -210,7 +275,7 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 			BlockDataEntry entry = new BlockDataEntry();
 			entry.readFromNBT(nbtEntry);
 			
-			addData(entry);
+			setData(entry);
 		}
 		
 		System.out.println("loaded tree origin as: " + origin.toString() + " with entry count: " + lookupDataAll.size());

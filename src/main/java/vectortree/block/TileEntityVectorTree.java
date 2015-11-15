@@ -32,7 +32,7 @@ public class TileEntityVectorTree extends TileEntity
     	hasInit = true;
     	
     	//growMan = new GrowthManager(worldObj, new ChunkCoordinates(xCoord, yCoord, zCoord));
-    	worldObj.setBlock(xCoord, yCoord+1, zCoord, Blocks.log2);
+    	worldObj.setBlock(xCoord, yCoord+1, zCoord, Blocks.log);
     	WorldDirectorManager.instance().getCoroUtilWorldDirector(worldObj).addTickingLocation(new TreeSimulation(worldObj.provider.dimensionId, new ChunkCoordinates(xCoord, yCoord+1, zCoord)));
     }
     

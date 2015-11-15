@@ -31,6 +31,10 @@ public class BlockDataEntry implements ISerializableNBT {
 	public ChunkCoordinates getCoords() {
 		return coords;
 	}
+	
+	public ChunkCoordinates getCoordsForChunk() {
+		return new ChunkCoordinates(coords.posX / 16, 0, coords.posZ / 16);
+	}
 
 	public void setCoords(ChunkCoordinates coords) {
 		this.coords = coords;
