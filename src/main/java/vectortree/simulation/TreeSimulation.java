@@ -125,6 +125,8 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 		//main issue is the listCoords, need to make a copy using CopyOnWriteArrayList
 		//dont use iterator to remove, just make a new list of entries to remove, then do a removeAll on listCoords with that new list
 		
+		Set<ChunkCoordinates> listCoordsChunkToRemove = new HashSet<ChunkCoordinates>();
+		
 		Iterator it = setChunksToTick.iterator();
 		while (it.hasNext()) {
 			ChunkCoordinates coords = (ChunkCoordinates) it.next();
@@ -135,27 +137,37 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 					Iterator itUpdates = listCoords.iterator();
 					int updateCount = 0;
 					
-					Set<ChunkCoordinates> listCoordsToRemove = new HashSet<ChunkCoordinates>();
+					Set<ChunkCoordinates> listCoordsBlockToRemove = new HashSet<ChunkCoordinates>();
 					
 					while (itUpdates.hasNext() && updateCount++ < this.blocksPerUpdateWorldTick) {
 						ChunkCoordinates coordToProcess = (ChunkCoordinates) itUpdates.next();
 						
 						BlockDataEntry data = lookupDataAll.get(coordToProcess);
 						if (data != null) {
-							System.out.println("pushing live change, count for this tick: " + updateCount);
+							//System.out.println("pushing live change, count for this tick: " + updateCount);
 							pushLiveChange(data);
 						} else {
 							System.out.println("BlockDataEntry we wanted to update to world is null, design flaw?");
 						}
 						
-						listCoordsToRemove.add(coordToProcess);
+						listCoordsBlockToRemove.add(coordToProcess);
 						//itUpdates.remove();
 					}
 					
-					//remove from master list
-					listCoords.removeAll(listCoordsToRemove);
+					//remove from master block coord list
+					listCoords.removeAll(listCoordsBlockToRemove);
+					
+					//if final count is 0 for this chunk
+					if (listCoords.size() == 0) {
+						//remove this chunk from active tick update
+						listCoordsChunkToRemove.add(coords);
+					}
 				}
 			}
+		}
+		
+		if (setChunksToTick.size() > 0) {
+			setChunksToTick.removeAll(listCoordsChunkToRemove);
 		}
 	}
 	
@@ -279,6 +291,8 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 		dimID = parData.getInteger("dimID");
 		origin = new ChunkCoordinates(parData.getInteger("originX"), parData.getInteger("originY"), parData.getInteger("originZ"));
 		
+		branchLength = parData.getInteger("branchLength");
+		
 		NBTTagCompound nbtData = parData.getCompoundTag("simData");
 		Iterator it = nbtData.func_150296_c().iterator();
 		while (it.hasNext()) {
@@ -303,6 +317,8 @@ public class TreeSimulation implements ISimulationTickable, ISerializableNBT {
 		parData.setInteger("originX", origin.posX);
 		parData.setInteger("originY", origin.posY);
 		parData.setInteger("originZ", origin.posZ);
+		
+		parData.setInteger("branchLength", branchLength);
 		
 
 		NBTTagCompound nbtData = new NBTTagCompound();
