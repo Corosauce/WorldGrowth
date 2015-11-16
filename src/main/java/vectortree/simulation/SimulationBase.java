@@ -19,6 +19,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.DimensionManager;
 import CoroUtil.util.ISerializableNBT;
+import CoroUtil.world.WorldDirector;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.location.ISimulationTickable;
 
@@ -42,7 +43,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	
 	private int tickRateSimulation = 20;
 	private int tickRateUpdateWorld = 1;
-	private int blocksPerUpdateWorldTick = 20;
+	//private int blocksPerUpdateWorldTick = 20;
 	
 	//stores data about location for all touched coords
 	//touched by: MC, THREAD
@@ -99,54 +100,62 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	}
 	
 	public void tickApplyWorldChanges() {
-		Set<ChunkCoordinates> listCoordsChunkToRemove = new HashSet<ChunkCoordinates>();
 		
-		if (setChunksToTick.size() > 0) {
-			System.out.println("ticking chunks size: " + setChunksToTick.size());
-		}
+		int curUpdateAmount = getWorldDirector().getSharedSimulationUpdateRateCurrent(getSharedSimulationName());
+		int curUpdateLimit = getWorldDirector().getSharedSimulationUpdateRateLimit(getSharedSimulationName());
 		
-		Iterator it = setChunksToTick.iterator();
-		while (it.hasNext()) {
-			ChunkCoordinates coords = (ChunkCoordinates) it.next();
+		if (curUpdateAmount < curUpdateLimit) {
+			Set<ChunkCoordinates> listCoordsChunkToRemove = new HashSet<ChunkCoordinates>();
 			
-			if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(coords)) {
-				if (lookupChunkToBlockCoordsForPendingUpdate.get(coords).size() > 0) {
-					Set<ChunkCoordinates> listCoords = lookupChunkToBlockCoordsForPendingUpdate.get(coords);
-					Iterator itUpdates = listCoords.iterator();
-					int updateCount = 0;
-					
-					Set<ChunkCoordinates> listCoordsBlockToRemove = new HashSet<ChunkCoordinates>();
-					
-					while (itUpdates.hasNext() && updateCount++ < this.blocksPerUpdateWorldTick) {
-						ChunkCoordinates coordToProcess = (ChunkCoordinates) itUpdates.next();
+			if (setChunksToTick.size() > 0) {
+				System.out.println("ticking chunks size: " + setChunksToTick.size());
+			}
+			
+			Iterator it = setChunksToTick.iterator();
+			while (it.hasNext()) {
+				ChunkCoordinates coords = (ChunkCoordinates) it.next();
+				
+				if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(coords)) {
+					if (lookupChunkToBlockCoordsForPendingUpdate.get(coords).size() > 0) {
+						Set<ChunkCoordinates> listCoords = lookupChunkToBlockCoordsForPendingUpdate.get(coords);
+						Iterator itUpdates = listCoords.iterator();
+						//int updateCount = 0;
 						
-						BlockDataEntry data = lookupDataAll.get(coordToProcess);
-						if (data != null) {
-							//System.out.println("pushing live change, count for this tick: " + updateCount);
-							pushLiveChange(data);
-						} else {
-							System.out.println("BlockDataEntry we wanted to update to world is null, design flaw?");
+						Set<ChunkCoordinates> listCoordsBlockToRemove = new HashSet<ChunkCoordinates>();
+						
+						while (itUpdates.hasNext() && curUpdateAmount++ < curUpdateLimit) {
+							ChunkCoordinates coordToProcess = (ChunkCoordinates) itUpdates.next();
+							
+							BlockDataEntry data = lookupDataAll.get(coordToProcess);
+							if (data != null) {
+								//System.out.println("pushing live change, count for this tick: " + updateCount);
+								pushLiveChange(data);
+							} else {
+								System.out.println("BlockDataEntry we wanted to update to world is null, design flaw?");
+							}
+							
+							listCoordsBlockToRemove.add(coordToProcess);
+							//itUpdates.remove();
 						}
 						
-						listCoordsBlockToRemove.add(coordToProcess);
-						//itUpdates.remove();
-					}
-					
-					//remove from master block coord list
-					listCoords.removeAll(listCoordsBlockToRemove);
-					
-					//if final count is 0 for this chunk
-					if (listCoords.size() == 0) {
-						//remove this chunk from active tick update
-						listCoordsChunkToRemove.add(coords);
+						//remove from master block coord list
+						listCoords.removeAll(listCoordsBlockToRemove);
+						
+						//if final count is 0 for this chunk
+						if (listCoords.size() == 0) {
+							//remove this chunk from active tick update
+							listCoordsChunkToRemove.add(coords);
+						}
 					}
 				}
 			}
+		
+			if (setChunksToTick.size() > 0) {
+				setChunksToTick.removeAll(listCoordsChunkToRemove);
+			}
 		}
 		
-		if (setChunksToTick.size() > 0) {
-			setChunksToTick.removeAll(listCoordsChunkToRemove);
-		}
+		getWorldDirector().setSharedSimulationUpdateRateCurrent(getSharedSimulationName(), curUpdateAmount);
 	}
 	
 	public void pushDataChange(BlockDataEntry data) {
@@ -185,11 +194,8 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	}
 	
 	public boolean isValid() {
-		//TODO: consider rewriting this validation to use cached data only
-		if (!getWorld().blockExists(origin.posX, origin.posY, origin.posZ)) return true;
-		if (getWorld().getBlock(origin.posX, origin.posY, origin.posZ) != Blocks.log) {
-			return false;
-		}
+		
+		
 		return true;
 	}
 	
@@ -219,8 +225,12 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		return DimensionManager.getWorld(dimID);
 	}
 	
+	public WorldDirector getWorldDirector() {
+		return WorldDirectorManager.instance().getCoroUtilWorldDirector(getWorld());
+	}
+	
 	public void destroy() {
-		WorldDirectorManager.instance().getCoroUtilWorldDirector(getWorld()).removeTickingLocation(this);
+		getWorldDirector().removeTickingLocation(this);
 	}
 
 	@Override
@@ -284,6 +294,16 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	@Override
 	public boolean isThreaded() {
 		return true;
+	}
+
+	@Override
+	public String getSharedSimulationName() {
+		return "";
+	}
+
+	@Override
+	public void init() {
+		
 	}
 
 }
