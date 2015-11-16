@@ -1,6 +1,6 @@
 package vectortree.forge;
 
-import vectortree.simulation.TreeSimulation;
+import vectortree.simulation.SimulationBase;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
@@ -63,8 +63,8 @@ public class EventHandlerForge {
 		
 		if (!event.world.isRemote) {
 			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).lookupTickingManagedLocations.values()) {
-				if (ticker instanceof TreeSimulation) {
-					TreeSimulation tree = (TreeSimulation) ticker;
+				if (ticker instanceof SimulationBase) {
+					SimulationBase tree = (SimulationBase) ticker;
 					//if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
 						//dont compare origin just pass the chunk thats loading, in future consider a 'chunk load listener' system for simulated trees to save having to do a full iteration
 						//if (tree.getOrigin().posX / 16 == event.getChunk().xPosition && tree.getOrigin().posZ / 16 == event.getChunk().zPosition) {
@@ -80,8 +80,8 @@ public class EventHandlerForge {
 	public void chunkUnload(ChunkEvent.Unload event) {
 		if (!event.world.isRemote) {
 			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).lookupTickingManagedLocations.values()) {
-				if (ticker instanceof TreeSimulation) {
-					TreeSimulation tree = (TreeSimulation) ticker;
+				if (ticker instanceof SimulationBase) {
+					SimulationBase tree = (SimulationBase) ticker;
 					//if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
 						tree.hookChunkUnload(event.getChunk());
 					//}
