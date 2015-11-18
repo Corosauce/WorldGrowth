@@ -1,9 +1,11 @@
 package vectortree.simulation;
 
-import CoroUtil.world.WorldDirectorManager;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChunkCoordinates;
+import vectortree.simulation.tree.GrowthNodeNew;
+import vectortree.simulation.tree.GrowthProfile;
+import vectortree.simulation.tree.GrowthProfile.GrowthProfilePiece;
 
 public class TreeSimulation extends SimulationBase {
 
@@ -12,7 +14,10 @@ public class TreeSimulation extends SimulationBase {
 	//quick test vars, to be located into a node tree system
 	private int branchLength = 0;
 	private int branchLengthMax = 50;
-	
+
+	private GrowthNodeNew baseNode;
+	private GrowthProfile profile;
+
 	public TreeSimulation() {
 		
 	}
@@ -26,6 +31,40 @@ public class TreeSimulation extends SimulationBase {
 		super.init();
 		
 		getWorldDirector().setSharedSimulationUpdateRateLimit(getSharedSimulationName(), 16);		
+	}
+	
+	/**
+	 * 
+	 * All this will be definable in json files in future
+	 * 
+	 */
+	public void initTestProfile() {
+		profile = new GrowthProfile();
+		profile.setLevels(3);
+		
+		GrowthProfilePiece piece = new GrowthProfilePiece();
+		piece.setBlockToPlace(Blocks.log);
+		piece.setThickness(3);
+		piece.setLength(10);
+		piece.setInheritDirectionAmount(0);
+		piece.setGrowthDirectionVertical(2);
+		profile.setPiece(0, piece);
+		
+		piece = new GrowthProfilePiece();
+		piece.setBlockToPlace(Blocks.log);
+		piece.setThickness(1);
+		piece.setLength(8);
+		piece.setInheritDirectionAmount(0);
+		piece.setGrowthDirectionVertical(1);
+		profile.setPiece(1, piece);
+		
+		piece = new GrowthProfilePiece();
+		piece.setBlockToPlace(Blocks.log);
+		piece.setThickness(1);
+		piece.setLength(5);
+		piece.setInheritDirectionAmount(0);
+		piece.setGrowthDirectionVertical(0.5F);
+		profile.setPiece(2, piece);
 	}
 	
 	@Override
@@ -92,6 +131,22 @@ public class TreeSimulation extends SimulationBase {
 	@Override
 	public String getSharedSimulationName() {
 		return "vectortree";
+	}
+	
+	public GrowthProfile getProfile() {
+		return profile;
+	}
+
+	public void setProfile(GrowthProfile profile) {
+		this.profile = profile;
+	}
+	
+	public GrowthNodeNew getBaseNode() {
+		return baseNode;
+	}
+
+	public void setBaseNode(GrowthNodeNew baseNode) {
+		this.baseNode = baseNode;
 	}
 	
 }
