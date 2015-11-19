@@ -75,6 +75,10 @@ public class GrowthProfile {
 	public static class GrowthProfilePiece {
 		
 		/**
+		 * consider making growth direction calculations based on trunk position, not parent branch, so it spreads out in a more natural way
+		 */
+		
+		/**
 		 * For both branches and leaves maybe
 		 */
 		private Block blockToPlace;
@@ -89,7 +93,7 @@ public class GrowthProfile {
 		private float inheritDirectionAmount;
 		
 		/**
-		 * ranges: 0-2, 0 is down, 1 is middle, 2 is up
+		 * ranges: -1 to 1, -1 is down, 0 is middle, 1 is up
 		 */
 		private float growthDirectionVertical;
 		
@@ -102,8 +106,26 @@ public class GrowthProfile {
 		 */
 		private float growthDirectionVarianceRandomRange;
 		
+		/**
+		 * 
+		 */
+		private int childBranchesToMake;
+		
+		/**
+		 * 
+		 */
+		private float growthRate;
+
 		public GrowthProfilePiece() {
 			
+		}
+
+		public float getGrowthRate() {
+			return growthRate;
+		}
+
+		public void setGrowthRate(float growthRate) {
+			this.growthRate = growthRate;
 		}
 
 		public Block getBlockToPlace() {
@@ -155,6 +177,14 @@ public class GrowthProfile {
 			this.growthDirectionVarianceRandomRange = growthDirectionVarianceRandomRange;
 		}
 		
+		public int getChildBranchesToMake() {
+			return childBranchesToMake;
+		}
+
+		public void setChildBranchesToMake(int childBranchesToMake) {
+			this.childBranchesToMake = childBranchesToMake;
+		}
+		
 		
 		
 	}
@@ -169,6 +199,10 @@ public class GrowthProfile {
 
 	public void setLevels(int levels) {
 		this.levels = levels;
+	}
+	
+	public GrowthProfilePiece getProfileForLevel(int level) {
+		return levelProfiles.get(level);
 	}
 }
 

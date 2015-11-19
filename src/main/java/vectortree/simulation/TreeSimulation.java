@@ -1,5 +1,8 @@
 package vectortree.simulation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChunkCoordinates;
@@ -17,6 +20,8 @@ public class TreeSimulation extends SimulationBase {
 
 	private GrowthNodeNew baseNode;
 	private GrowthProfile profile;
+	
+	private List<GrowthNodeNew> listTickingGrowths =  new ArrayList<GrowthNodeNew>();
 
 	public TreeSimulation() {
 		
@@ -30,7 +35,14 @@ public class TreeSimulation extends SimulationBase {
 	public void init() {
 		super.init();
 		
-		getWorldDirector().setSharedSimulationUpdateRateLimit(getSharedSimulationName(), 16);		
+		getWorldDirector().setSharedSimulationUpdateRateLimit(getSharedSimulationName(), 16);
+		
+		//TODO: replace with json
+		initTestProfile();
+		
+		baseNode = new GrowthNodeNew(this, null, 0);
+		baseNode.initFromSimulation();
+		addTickingGrowth(baseNode);
 	}
 	
 	/**
@@ -45,9 +57,11 @@ public class TreeSimulation extends SimulationBase {
 		GrowthProfilePiece piece = new GrowthProfilePiece();
 		piece.setBlockToPlace(Blocks.log);
 		piece.setThickness(3);
-		piece.setLength(10);
+		piece.setLength(5);
 		piece.setInheritDirectionAmount(0);
-		piece.setGrowthDirectionVertical(2);
+		piece.setGrowthDirectionVertical(1);
+		piece.setChildBranchesToMake(5);
+		piece.setGrowthRate(0.9F);
 		profile.setPiece(0, piece);
 		
 		piece = new GrowthProfilePiece();
@@ -55,7 +69,9 @@ public class TreeSimulation extends SimulationBase {
 		piece.setThickness(1);
 		piece.setLength(8);
 		piece.setInheritDirectionAmount(0);
-		piece.setGrowthDirectionVertical(1);
+		piece.setGrowthDirectionVertical(0);
+		piece.setChildBranchesToMake(2);
+		piece.setGrowthRate(0.3F);
 		profile.setPiece(1, piece);
 		
 		piece = new GrowthProfilePiece();
@@ -63,7 +79,9 @@ public class TreeSimulation extends SimulationBase {
 		piece.setThickness(1);
 		piece.setLength(5);
 		piece.setInheritDirectionAmount(0);
-		piece.setGrowthDirectionVertical(0.5F);
+		piece.setGrowthDirectionVertical(-0.5F);
+		piece.setChildBranchesToMake(0);
+		piece.setGrowthRate(0.3F);
 		profile.setPiece(2, piece);
 	}
 	
@@ -77,7 +95,19 @@ public class TreeSimulation extends SimulationBase {
 		super.tickSimulate();
 		
 		if (isActive()) {
-			branchLength++;
+			//int size = listTickingGrowths.size();
+			for (int i = 0; i < listTickingGrowths.size(); i++) {
+				GrowthNodeNew node = listTickingGrowths.get(i);
+				if (node.isActive()) {
+					node.tick();
+				} else {
+					listTickingGrowths.remove(i--);
+				}
+			}
+			/*for (GrowthNodeNew node : listTickingGrowths) {
+				node.tick();
+			}*/
+			/*branchLength++;
 			
 			System.out.println("branchLength: " + branchLength);
 			
@@ -91,7 +121,7 @@ public class TreeSimulation extends SimulationBase {
 			
 			if (branchLength == branchLengthMax) {
 				System.out.println("tree hit max");
-			}
+			}*/
 		}
 	}
 	
@@ -147,6 +177,10 @@ public class TreeSimulation extends SimulationBase {
 
 	public void setBaseNode(GrowthNodeNew baseNode) {
 		this.baseNode = baseNode;
+	}
+	
+	public void addTickingGrowth(GrowthNodeNew node) {
+		listTickingGrowths.add(node);
 	}
 	
 }
