@@ -49,9 +49,6 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	//touched by: MC, THREAD
 	private ConcurrentHashMap<ChunkCoordinates, BlockDataEntry> lookupDataAll = new ConcurrentHashMap<ChunkCoordinates, BlockDataEntry>();
 	//stores data about unupdated location pending changing once chunk loads
-	@Deprecated
-	private List<ChunkCoordinates> listPending = new ArrayList<ChunkCoordinates>();
-	//private HashMap<ChunkCoordinates, BlockDataEntry> lookupDataPending = new HashMap<ChunkCoordinates, BlockDataEntry>();
 	
 	//for organizing pending updates based on the chunk its in
 	//touched by: MC, THREAD
@@ -59,9 +56,6 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	
 	//list of loaded chunks we need to tick for updates while we can, used for lookupChunkToBlockCoordsForPendingUpdate
 	//this list is maintained by chunk load and unload events and if that chunk is in the lookup for pending updates...
-	//TODO: make sure that if chunk is already loaded when entry is added to lookup pending, we check to see if we need to add that chunk into this list
-	//private List<ChunkCoordinates> listChunksToTick = Collections.synchronizedList(new ArrayList<ChunkCoordinates>());
-	//private Set<ChunkCoordinates> setChunksToTick = Collections.synchronizedSet(new HashSet<ChunkCoordinates>());
 	//touched by: MC, THREAD?
 	private ConcurrentSet<ChunkCoordinates> setChunksToTick = new ConcurrentSet<ChunkCoordinates>();
 	
@@ -204,6 +198,9 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	 * 
 	 */
 	public void hookChunkLoad(Chunk chunk) {
+		
+		//TODO: mass process a chunk if its loaded and wasnt active, client wise this would be more efficient, so all block changes happen and are sent in 1 network packet for the chunk
+		//TODO: consider going more low level to apply block updates to skip some pointless overhead, maybe consider notify flag that doesnt notify neighbors, this might cause issues though
 		
 		ChunkCoordinates chunkCoord = new ChunkCoordinates(chunk.xPosition, 0, chunk.zPosition);
 		if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(chunkCoord) && lookupChunkToBlockCoordsForPendingUpdate.get(chunkCoord).size() > 0) {

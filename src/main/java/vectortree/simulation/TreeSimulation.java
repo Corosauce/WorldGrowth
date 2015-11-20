@@ -12,12 +12,6 @@ import vectortree.simulation.tree.GrowthProfile.GrowthProfilePiece;
 
 public class TreeSimulation extends SimulationBase {
 
-
-	
-	//quick test vars, to be located into a node tree system
-	private int branchLength = 0;
-	private int branchLengthMax = 50;
-
 	private GrowthNodeNew baseNode;
 	private GrowthProfile profile;
 	
@@ -126,7 +120,7 @@ public class TreeSimulation extends SimulationBase {
 	}
 	
 	public boolean isActive() {
-		return branchLength < branchLengthMax;
+		return true;//branchLength < branchLengthMax;
 	}
 	
 	@Override
@@ -144,8 +138,8 @@ public class TreeSimulation extends SimulationBase {
 	
 	@Override
 	public void readFromNBT(NBTTagCompound parData) {
-
-		branchLength = parData.getInteger("branchLength");
+		
+		baseNode.readFromNBT(parData.getCompoundTag("baseNode"));
 		
 		super.readFromNBT(parData);
 	}
@@ -153,7 +147,7 @@ public class TreeSimulation extends SimulationBase {
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound parData) {
 		
-		parData.setInteger("branchLength", branchLength);
+		parData.setTag("baseNode", baseNode.writeToNBT(new NBTTagCompound()));
 		
 		return super.writeToNBT(parData);
 	}

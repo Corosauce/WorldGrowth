@@ -1,12 +1,17 @@
 package vectortree.simulation.tree;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import vectortree.simulation.BlockDataEntry;
 import vectortree.simulation.TreeSimulation;
 import vectortree.simulation.tree.GrowthProfile.GrowthProfilePiece;
+import CoroUtil.util.ISerializableNBT;
 import CoroUtil.util.Vector3f;
 
 /**
@@ -17,7 +22,7 @@ import CoroUtil.util.Vector3f;
  * @author Corosus
  *
  */
-public class GrowthNodeNew {
+public class GrowthNodeNew implements ISerializableNBT  {
 
 	private TreeSimulation tree;
 	private GrowthNodeNew parent;
@@ -28,6 +33,8 @@ public class GrowthNodeNew {
 	private Vector3f growthDirectionInitial = new Vector3f();
 	
 	private float growthLength;
+	
+	private List<GrowthNodeNew> listChildNodes = new ArrayList<GrowthNodeNew>();
 	
 	private ChunkCoordinates startCoord = null;
 	private ChunkCoordinates cachedCoord = null;
@@ -105,12 +112,76 @@ public class GrowthNodeNew {
 		
 		for (int i = 0; i < profile.getChildBranchesToMake(); i++) {
 			System.out.println("new node!");
-			GrowthNodeNew newNode = new GrowthNodeNew(tree, this, level+1);
-			newNode.initFromParent();
-			tree.addTickingGrowth(newNode);
+			newChildNode(true);
 		}
 		
 		setActive(false);
+	}
+	
+	public GrowthNodeNew newChildNode(boolean isActive) {
+		GrowthNodeNew newNode = new GrowthNodeNew(tree, this, level+1);
+		newNode.initFromParent();
+		listChildNodes.add(newNode);
+		if (isActive) tree.addTickingGrowth(newNode);
+		return newNode;
+	}
+
+	@Override
+	public void readFromNBT(NBTTagCompound nbt) {
+		
+		this.level = nbt.getInteger("level");
+		this.startCoord = new ChunkCoordinates(nbt.getInteger("startCoordX"), nbt.getInteger("startCoordY"), nbt.getInteger("startCoordZ"));
+		this.isActive = nbt.getBoolean("isActive");
+		
+		this.growthLength = nbt.getFloat("growthLength");
+		this.growthDirection = new Vector3f(nbt.getFloat("growthDirX"), nbt.getFloat("growthDirY"), nbt.getFloat("growthDirZ"));
+		
+		this.growthDirectionInitial = new Vector3f(nbt.getFloat("growthDirXInit"), nbt.getFloat("growthDirYInit"), nbt.getFloat("growthDirZInit"));
+		
+		Iterator it = nbt.getCompoundTag("nodes").func_150296_c().iterator();
+		
+		while (it.hasNext()) {
+			String keyName = (String)it.next();
+			NBTTagCompound nbtNode = nbt.getCompoundTag(keyName);
+			
+			GrowthNodeNew node = newChildNode(nbtNode.getBoolean("isActive"));
+			node.readFromNBT(nbtNode);
+		}
+		
+	}
+
+	@Override
+	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+		
+		nbt.setInteger("level", level);
+		nbt.setInteger("startCoordX", this.startCoord.posX);
+		nbt.setInteger("startCoordY", this.startCoord.posY);
+		nbt.setInteger("startCoordZ", this.startCoord.posZ);
+		
+		nbt.setBoolean("isActive", isActive);
+		
+		nbt.setFloat("growthLength", growthLength);
+		
+		nbt.setFloat("growthDirX", growthDirection.x);
+		nbt.setFloat("growthDirY", growthDirection.y);
+		nbt.setFloat("growthDirZ", growthDirection.z);
+		
+		nbt.setFloat("growthDirXInit", growthDirectionInitial.x);
+		nbt.setFloat("growthDirYInit", growthDirectionInitial.y);
+		nbt.setFloat("growthDirZInit", growthDirectionInitial.z);
+		
+		NBTTagCompound nbtNodes = new NBTTagCompound();
+		
+		int nodeIndex = 0;
+		for (GrowthNodeNew node : listChildNodes) {
+			NBTTagCompound nbtNode = node.writeToNBT(new NBTTagCompound());
+			
+			nbtNodes.setTag("node_" + nodeIndex++, nbtNode);
+		}
+		
+		nbt.setTag("nodes", nbtNodes);
+		
+		return nbt;
 	}
 	
 	public GrowthProfilePiece getProfilePieceForLevel() {
