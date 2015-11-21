@@ -59,6 +59,8 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	//touched by: MC, THREAD?
 	private ConcurrentSet<ChunkCoordinates> setChunksToTick = new ConcurrentSet<ChunkCoordinates>();
 	
+	//protected boolean hasInit = false;
+	
 	public SimulationBase() {
 		//needed for generic init
 	}
@@ -70,6 +72,10 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	
 	@Override
 	public void tickUpdate() {
+		/*if (!hasInit) {
+			init();
+			hasInit = true;
+		}*/
 		if (isValid()) {
 			
 			if (getWorld().getTotalWorldTime() % tickRateUpdateWorld == 0) {

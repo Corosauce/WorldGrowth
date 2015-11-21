@@ -138,6 +138,8 @@ public class GrowthNodeNew implements ISerializableNBT  {
 		
 		this.growthDirectionInitial = new Vector3f(nbt.getFloat("growthDirXInit"), nbt.getFloat("growthDirYInit"), nbt.getFloat("growthDirZInit"));
 		
+		System.out.println("loaded in branch of level: " + level);
+		
 		Iterator it = nbt.getCompoundTag("nodes").func_150296_c().iterator();
 		
 		while (it.hasNext()) {

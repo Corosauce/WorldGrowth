@@ -11,6 +11,8 @@ import vectortree.simulation.tree.GrowthProfile;
 import vectortree.simulation.tree.GrowthProfile.GrowthProfilePiece;
 
 public class TreeSimulation extends SimulationBase {
+	
+	//TODO: init / nbt load order is a mess, clean it up
 
 	private GrowthNodeNew baseNode;
 	private GrowthProfile profile;
@@ -34,9 +36,11 @@ public class TreeSimulation extends SimulationBase {
 		//TODO: replace with json
 		initTestProfile();
 		
-		baseNode = new GrowthNodeNew(this, null, 0);
-		baseNode.initFromSimulation();
-		addTickingGrowth(baseNode);
+		if (baseNode == null) {
+			baseNode = new GrowthNodeNew(this, null, 0);
+			baseNode.initFromSimulation();
+			addTickingGrowth(baseNode);
+		}
 	}
 	
 	/**
@@ -86,6 +90,9 @@ public class TreeSimulation extends SimulationBase {
 	
 	@Override
 	public void tickSimulate() {
+		
+		//if (!hasInit) return;
+		
 		super.tickSimulate();
 		
 		if (isActive()) {
@@ -138,6 +145,12 @@ public class TreeSimulation extends SimulationBase {
 	
 	@Override
 	public void readFromNBT(NBTTagCompound parData) {
+		
+		if (baseNode == null) {
+			baseNode = new GrowthNodeNew(this, null, 0);
+			baseNode.initFromSimulation();
+			addTickingGrowth(baseNode);
+		}
 		
 		baseNode.readFromNBT(parData.getCompoundTag("baseNode"));
 		
