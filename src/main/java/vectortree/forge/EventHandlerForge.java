@@ -62,7 +62,7 @@ public class EventHandlerForge {
 		//TODO: get list of ISimulationTickable to pass this event to more efficiently
 		
 		if (!event.world.isRemote) {
-			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).lookupTickingManagedLocations.values()) {
+			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).listTickingLocations) {
 				if (ticker instanceof SimulationBase) {
 					SimulationBase tree = (SimulationBase) ticker;
 					//if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
@@ -79,7 +79,7 @@ public class EventHandlerForge {
 	@SubscribeEvent
 	public void chunkUnload(ChunkEvent.Unload event) {
 		if (!event.world.isRemote) {
-			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).lookupTickingManagedLocations.values()) {
+			for (ISimulationTickable ticker : WorldDirectorManager.instance().getCoroUtilWorldDirector(event.world).listTickingLocations) {
 				if (ticker instanceof SimulationBase) {
 					SimulationBase tree = (SimulationBase) ticker;
 					//if (tree.getWorld().provider.dimensionId == event.world.provider.dimensionId) {
