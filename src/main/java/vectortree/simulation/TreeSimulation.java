@@ -2,6 +2,7 @@ package vectortree.simulation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
@@ -17,6 +18,8 @@ public class TreeSimulation extends SimulationBase {
 	private GrowthProfile profile;
 	
 	private List<GrowthNodeNew> listTickingGrowths =  new ArrayList<GrowthNodeNew>();
+	
+	public Random rand = new Random();
 
 	public TreeSimulation() {
 		
@@ -55,34 +58,58 @@ public class TreeSimulation extends SimulationBase {
 		profile = new GrowthProfile();
 		profile.setLevels(3);
 		
+		
+		
 		GrowthProfilePiece piece = new GrowthProfilePiece();
 		piece.setBlockToPlace(Blocks.log);
 		piece.setThickness(3);
 		piece.setLength(5);
-		piece.setInheritDirectionAmount(0);
+		piece.setInheritDirectionFromParent(false);
 		piece.setGrowthDirectionVertical(1);
+		
+		
+		piece.setGrowthDirectionVarianceRandomRange(360);
+		piece.setGrowthDirectionVarianceRandomRate(90);
+		piece.setGrowthRateScaleHorizontal(0.3F);
+		piece.setGrowthRate(1F);
+		
 		piece.setChildBranchesToMake(5);
-		piece.setGrowthRate(0.9F);
 		profile.setPiece(0, piece);
 		
-		piece = new GrowthProfilePiece();
-		piece.setBlockToPlace(Blocks.log);
-		piece.setThickness(1);
-		piece.setLength(20);
-		piece.setInheritDirectionAmount(0);
-		piece.setGrowthDirectionVertical(0);
-		piece.setChildBranchesToMake(2);
-		piece.setGrowthRate(0.3F);
-		profile.setPiece(1, piece);
+		
 		
 		piece = new GrowthProfilePiece();
-		piece.setBlockToPlace(Blocks.log);
+		piece.setBlockToPlace(Blocks.log2);
 		piece.setThickness(1);
-		piece.setLength(5);
-		piece.setInheritDirectionAmount(0);
-		piece.setGrowthDirectionVertical(-0.5F);
+		piece.setLength(10);
+		piece.setInheritDirectionFromParent(true);
+		
+		piece.setInitialDirectionVariance(360);
+		piece.setGrowthDirectionVarianceRandomRange(0);
+		piece.setGrowthDirectionVarianceRandomRate(0);
+		piece.setGrowthDirectionVertical(0.3F);
+		piece.setGrowthRateScaleHorizontal(0.5F);
+		piece.setGrowthRate(1F);
+		
+		piece.setChildBranchesToMake(2);
+		profile.setPiece(1, piece);
+		
+		
+		
+		piece = new GrowthProfilePiece();
+		piece.setBlockToPlace(Blocks.planks);
+		piece.setThickness(1);
+		piece.setLength(15);
+		piece.setInheritDirectionFromParent(true);
+		
+		piece.setInitialDirectionVariance(360);
+		piece.setGrowthDirectionVarianceRandomRange(0);
+		piece.setGrowthDirectionVarianceRandomRate(0);
+		piece.setGrowthDirectionVertical(0.7F);
+		piece.setGrowthRateScaleHorizontal(1);
+		piece.setGrowthRate(1F);
+		
 		piece.setChildBranchesToMake(0);
-		piece.setGrowthRate(0.3F);
 		profile.setPiece(2, piece);
 	}
 	

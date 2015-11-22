@@ -108,7 +108,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 			Set<ChunkCoordinates> listCoordsChunkToRemove = new HashSet<ChunkCoordinates>();
 			
 			if (setChunksToTick.size() > 0) {
-				System.out.println("ticking chunks size: " + setChunksToTick.size());
+				//System.out.println("ticking chunks size: " + setChunksToTick.size());
 			}
 			
 			Iterator it = setChunksToTick.iterator();

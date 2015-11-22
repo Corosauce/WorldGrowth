@@ -89,14 +89,23 @@ public class GrowthProfile {
 		/**
 		 * inherit vector from parent amount for initial direction
 		 * ranges: 0-1
+		 * not sure if this should be a scale, maybe just a boolean
 		 */
+		@Deprecated
 		private float inheritDirectionAmount;
 		
+		private boolean inheritDirectionFromParent;
+
 		/**
 		 * ranges: -1 to 1, -1 is down, 0 is middle, 1 is up
 		 */
 		private float growthDirectionVertical;
 		
+		/**
+		 * Since switching to angles, we need a way to scale the horizontal progress that doesnt also affect y
+		 */
+		private float growthRateScaleHorizontal;
+
 		/**
 		 * Allow for a random variance, but still keep it within original vector direction
 		 * Would prevent scenarios like branches curling over their own branch
@@ -104,15 +113,26 @@ public class GrowthProfile {
 		 * perhaps make -1 be a disable option
 		 * 
 		 */
-		private float growthDirectionVarianceRandomRange;
+		private int growthDirectionVarianceRandomRange;
 		
+		/**
+		 * How much it varies per growth, within the range above
+		 */
+		private int growthDirectionVarianceRandomRate;
+		
+		/**
+		 * Initial random variance in direction
+		 * Used only when first setting a nodes direction, will respect inheritance
+		 */
+		private int initialDirectionVariance;
+
 		/**
 		 * 
 		 */
 		private int childBranchesToMake;
 		
 		/**
-		 * 
+		 * more of a distance per tick atm, rate is stuck in WorldDirector atm
 		 */
 		private float growthRate;
 
@@ -152,13 +172,13 @@ public class GrowthProfile {
 			this.thickness = thickness;
 		}
 
-		public float getInheritDirectionAmount() {
+		/*public float getInheritDirectionAmount() {
 			return inheritDirectionAmount;
 		}
 
 		public void setInheritDirectionAmount(float inheritDirectionAmount) {
 			this.inheritDirectionAmount = inheritDirectionAmount;
-		}
+		}*/
 
 		public float getGrowthDirectionVertical() {
 			return growthDirectionVertical;
@@ -168,12 +188,12 @@ public class GrowthProfile {
 			this.growthDirectionVertical = growthDirectionVertical;
 		}
 
-		public float getGrowthDirectionVarianceRandomRange() {
+		public int getGrowthDirectionVarianceRandomRange() {
 			return growthDirectionVarianceRandomRange;
 		}
 
 		public void setGrowthDirectionVarianceRandomRange(
-				float growthDirectionVarianceRandomRange) {
+				int growthDirectionVarianceRandomRange) {
 			this.growthDirectionVarianceRandomRange = growthDirectionVarianceRandomRange;
 		}
 		
@@ -185,8 +205,38 @@ public class GrowthProfile {
 			this.childBranchesToMake = childBranchesToMake;
 		}
 		
+		public int getGrowthDirectionVarianceRandomRate() {
+			return growthDirectionVarianceRandomRate;
+		}
+
+		public void setGrowthDirectionVarianceRandomRate(
+				int growthDirectionVarianceRandomRate) {
+			this.growthDirectionVarianceRandomRate = growthDirectionVarianceRandomRate;
+		}
 		
+		public boolean isInheritDirectionFromParent() {
+			return inheritDirectionFromParent;
+		}
+
+		public void setInheritDirectionFromParent(boolean inheritDirectionFromParent) {
+			this.inheritDirectionFromParent = inheritDirectionFromParent;
+		}
 		
+		public float getGrowthRateScaleHorizontal() {
+			return growthRateScaleHorizontal;
+		}
+
+		public void setGrowthRateScaleHorizontal(float growthRateScaleHorizontal) {
+			this.growthRateScaleHorizontal = growthRateScaleHorizontal;
+		}
+
+		public int getInitialDirectionVariance() {
+			return initialDirectionVariance;
+		}
+
+		public void setInitialDirectionVariance(int initialDirection) {
+			this.initialDirectionVariance = initialDirection;
+		}
 	}
 	
 	public void setPiece(int level, GrowthProfilePiece piece) {

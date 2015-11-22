@@ -1,21 +1,21 @@
 package vectortree.forge;
 
-import vectortree.simulation.SimulationBase;
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
+import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
-import net.minecraftforge.client.event.TextureStitchEvent;
+import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
+import net.minecraftforge.event.terraingen.DecorateBiomeEvent;
 import net.minecraftforge.event.world.ChunkEvent;
-import net.minecraftforge.event.world.WorldEvent.Save;
+import vectortree.simulation.SimulationBase;
+import vectortree.simulation.TreeSimulation;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.grid.block.BlockDataPoint;
 import CoroUtil.world.location.ISimulationTickable;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
 public class EventHandlerForge {
 	
@@ -87,6 +87,28 @@ public class EventHandlerForge {
 					//}
 				}
 			}
+		}
+	}
+	
+	@SubscribeEvent
+	public void chunkGenPost(DecorateBiomeEvent.Post event) {
+		
+		if (true) return;
+		
+		//System.out.println("chunkgen: " + event.chunkX + " - " + event.chunkZ);
+		
+		World worldObj = event.world;
+		int x = event.chunkX + 8;
+		int z = event.chunkZ + 8;
+		int y = worldObj.getTopSolidOrLiquidBlock(x, z);
+		//System.out.println("material check: " + worldObj.getBlock(x, y, z).getMaterial());
+		if (worldObj.getBlock(x, y, z).getMaterial() != Material.water/*== Material.grass*/) {
+			worldObj.setBlock(x, y+1, z, Blocks.log);
+	    	TreeSimulation sim = new TreeSimulation(worldObj.provider.dimensionId, new ChunkCoordinates(x, y+1, z));
+	    	sim.init();
+	    	sim.initPost();
+	    	WorldDirectorManager.instance().getCoroUtilWorldDirector(worldObj).addTickingLocation(sim);
+	    	//System.out.println("adding tree");
 		}
 	}
 }

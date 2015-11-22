@@ -29,8 +29,11 @@ public class GrowthNodeNew implements ISerializableNBT  {
 	private int level;
 	
 	//runtime values 
-	private Vector3f growthDirection = new Vector3f();
-	private Vector3f growthDirectionInitial = new Vector3f();
+	//private Vector3f growthDirection = new Vector3f();
+	//private Vector3f growthDirectionInitial = new Vector3f();
+	private int growthDirection;
+
+	private int growthDirectionInitial;
 	
 	private float growthLength;
 	
@@ -52,7 +55,7 @@ public class GrowthNodeNew implements ISerializableNBT  {
 	
 	public void initFromParent() {
 		startCoord = new ChunkCoordinates(parent.getGrowthPosition());
-		GrowthProfilePiece profile = getProfilePieceForLevel();
+		/*GrowthProfilePiece profile = getProfilePieceForLevel();
 		
 		//TODO: maths for inherit direction adjustment, maybe relocate this code to the location that initializes this class object
 		//growthDirectionInitial = new Vector3f(parent.getGrowthDirection());
@@ -62,30 +65,69 @@ public class GrowthNodeNew implements ISerializableNBT  {
 		float y = profile.getGrowthDirectionVertical();
 		float z = (float) Math.cos(randAngle);
 		growthDirectionInitial = new Vector3f(x, y, z);
-		growthDirection = new Vector3f(growthDirectionInitial);
+		growthDirection = new Vector3f(growthDirectionInitial);*/
+		
+		initGeneric();
 	}
 	
 	public void initFromSimulation() {
 		startCoord = tree.getOrigin();
+		
+		initGeneric();
+	}
+	
+	public void initGeneric() {
+
 		GrowthProfilePiece profile = getProfilePieceForLevel();
 		
-		growthDirectionInitial = new Vector3f(0, profile.getGrowthDirectionVertical(), 0);
-		growthDirection = new Vector3f(growthDirectionInitial);
+		Random rand = tree.rand;//new Random();
+		
+		if (profile.isInheritDirectionFromParent() && parent != null) {
+			//switch to angles for directional stuff, use random with that, no having to fix values afterwards
+			growthDirectionInitial = parent.growthDirection;
+			if (profile.getInitialDirectionVariance() > 0) {
+				growthDirectionInitial += rand.nextInt(profile.getInitialDirectionVariance()) - rand.nextInt(profile.getInitialDirectionVariance());
+			}
+		} else {
+			growthDirectionInitial = rand.nextInt(360);
+		}
+		
+		//float x = (rand.nextFloat() - rand.nextFloat()) * Math.min(profile.getGrowthDirectionVarianceRandomRate(), profile.getGrowthDirectionVarianceRandomRange());
+		//float z = (rand.nextFloat() - rand.nextFloat()) * Math.min(profile.getGrowthDirectionVarianceRandomRate(), profile.getGrowthDirectionVarianceRandomRange());
+		
+		
+		
+		//growthDirectionInitial = new Vector3f(x, profile.getGrowthDirectionVertical(), z);
+		growthDirection = growthDirectionInitial;
 	}
 	
 	public void tick() {
 		if (isActive()) {
 			GrowthProfilePiece profile = getProfilePieceForLevel();
+			
+			//TODO: recalculate how isActive plays into length, we need to get the real length now since this one is scaled down due to horiz and vert scaling
 			growthLength += profile.getGrowthRate();
 			
-			System.out.println("growing to length: " + growthLength);
+			Random rand = new Random();
+			
+			//update random direction change and clamp within allowed variance of initial direction
+			if (profile.getGrowthDirectionVarianceRandomRate() > 0) {
+				growthDirection += rand.nextInt(profile.getGrowthDirectionVarianceRandomRate()) - rand.nextInt(profile.getGrowthDirectionVarianceRandomRate());
+				if (growthDirection > growthDirectionInitial + profile.getGrowthDirectionVarianceRandomRange()) {
+					growthDirection = growthDirectionInitial + profile.getGrowthDirectionVarianceRandomRange();
+				} else if (growthDirection < growthDirectionInitial - profile.getGrowthDirectionVarianceRandomRange()) {
+					growthDirection = growthDirectionInitial - profile.getGrowthDirectionVarianceRandomRange();
+				}
+			}
+			
+			//System.out.println("growing to length: " + growthLength);
 			
 			ChunkCoordinates curCoord = getGrowthPosition();
 			
 			if (cachedCoord != null) {
 				if (!cachedCoord.equals(curCoord)) {
 					//detected at new block pos for main position, do some block updates
-					System.out.println("new coord to place!");
+					//System.out.println("new coord to place!");
 					tree.pushDataChange(new BlockDataEntry(curCoord, profile.getBlockToPlace()));
 					cachedCoord = curCoord;
 				} else {
@@ -98,7 +140,7 @@ public class GrowthNodeNew implements ISerializableNBT  {
 			
 			
 			if (growthLength >= profile.getLength()) {
-				System.out.println("reached end of growth");
+				//System.out.println("reached end of growth");
 				growthLength = profile.getLength();
 				endOfGrowth();
 			}
@@ -111,7 +153,7 @@ public class GrowthNodeNew implements ISerializableNBT  {
 		GrowthProfilePiece profile = getProfilePieceForLevel();
 		
 		for (int i = 0; i < profile.getChildBranchesToMake(); i++) {
-			System.out.println("new node!");
+			//System.out.println("new node!");
 			newChildNode(true);
 		}
 		
@@ -134,11 +176,11 @@ public class GrowthNodeNew implements ISerializableNBT  {
 		this.isActive = nbt.getBoolean("isActive");
 		
 		this.growthLength = nbt.getFloat("growthLength");
-		this.growthDirection = new Vector3f(nbt.getFloat("growthDirX"), nbt.getFloat("growthDirY"), nbt.getFloat("growthDirZ"));
 		
-		this.growthDirectionInitial = new Vector3f(nbt.getFloat("growthDirXInit"), nbt.getFloat("growthDirYInit"), nbt.getFloat("growthDirZInit"));
+		this.growthDirection = nbt.getInteger("growthDir");
+		this.growthDirectionInitial = nbt.getInteger("growthDirInit");//, nbt.getFloat("growthDirYInit"), nbt.getFloat("growthDirZInit"));
 		
-		System.out.println("loaded in branch of level: " + level);
+		//System.out.println("loaded in branch of level: " + level);
 		
 		NBTTagCompound nodes = nbt.getCompoundTag("nodes");
 		Iterator it = nodes.func_150296_c().iterator();
@@ -165,13 +207,13 @@ public class GrowthNodeNew implements ISerializableNBT  {
 		
 		nbt.setFloat("growthLength", growthLength);
 		
-		nbt.setFloat("growthDirX", growthDirection.x);
-		nbt.setFloat("growthDirY", growthDirection.y);
-		nbt.setFloat("growthDirZ", growthDirection.z);
+		nbt.setInteger("growthDir", growthDirection);
+		//nbt.setFloat("growthDirY", growthDirection.y);
+		//nbt.setFloat("growthDirZ", growthDirection.z);
 		
-		nbt.setFloat("growthDirXInit", growthDirectionInitial.x);
-		nbt.setFloat("growthDirYInit", growthDirectionInitial.y);
-		nbt.setFloat("growthDirZInit", growthDirectionInitial.z);
+		nbt.setInteger("growthDirInit", growthDirectionInitial);
+		//nbt.setFloat("growthDirYInit", growthDirectionInitial.y);
+		//nbt.setFloat("growthDirZInit", growthDirectionInitial.z);
 		
 		NBTTagCompound nbtNodes = new NBTTagCompound();
 		
@@ -192,25 +234,16 @@ public class GrowthNodeNew implements ISerializableNBT  {
 	}
 	
 	public ChunkCoordinates getGrowthPosition() {
-		return new ChunkCoordinates(MathHelper.floor_float(startCoord.posX + growthDirection.x * growthLength), 
-				MathHelper.floor_float(startCoord.posY + growthDirection.y * growthLength), 
-				MathHelper.floor_float(startCoord.posZ + growthDirection.z * growthLength));
-	}
-	
-	public Vector3f getGrowthDirection() {
-		return growthDirection;
-	}
-
-	public void setGrowthDirection(Vector3f growthDirection) {
-		this.growthDirection = growthDirection;
-	}
-
-	public Vector3f getGrowthDirectionInitial() {
-		return growthDirectionInitial;
-	}
-
-	public void setGrowthDirectionInitial(Vector3f growthDirectionInitial) {
-		this.growthDirectionInitial = growthDirectionInitial;
+		
+		GrowthProfilePiece profile = getProfilePieceForLevel();
+		
+		//TODO: verify accurate use of sin/cos for x/z, if it even matters
+		double x = (Math.sin(Math.toRadians(growthDirection)) * growthLength * profile.getGrowthRateScaleHorizontal());
+		double z = (Math.cos(Math.toRadians(growthDirection)) * growthLength * profile.getGrowthRateScaleHorizontal());
+		double y = (growthLength * profile.getGrowthDirectionVertical()); 
+		return new ChunkCoordinates(MathHelper.floor_double(startCoord.posX + x), 
+				MathHelper.floor_double(startCoord.posY + y), 
+				MathHelper.floor_double(startCoord.posZ + z));
 	}
 
 	public float getGrowthLength() {
@@ -235,6 +268,22 @@ public class GrowthNodeNew implements ISerializableNBT  {
 
 	public void setActive(boolean isActive) {
 		this.isActive = isActive;
+	}
+	
+	public int getGrowthDirection() {
+		return growthDirection;
+	}
+
+	public void setGrowthDirection(int growthDirection) {
+		this.growthDirection = growthDirection;
+	}
+
+	public int getGrowthDirectionInitial() {
+		return growthDirectionInitial;
+	}
+
+	public void setGrowthDirectionInitial(int growthDirectionInitial) {
+		this.growthDirectionInitial = growthDirectionInitial;
 	}
 	
 }

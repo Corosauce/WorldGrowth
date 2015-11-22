@@ -68,7 +68,9 @@ public class VectorTree {
     public void load(FMLInitializationEvent event)
     {
     	proxy.init(this);
-    	MinecraftForge.EVENT_BUS.register(new EventHandlerForge());
+    	EventHandlerForge eventHandler = new EventHandlerForge();
+    	MinecraftForge.EVENT_BUS.register(eventHandler);
+    	MinecraftForge.TERRAIN_GEN_BUS.register(eventHandler);
     	FMLCommonHandler.instance().bus().register(new EventHandlerFML());
     	
     }
