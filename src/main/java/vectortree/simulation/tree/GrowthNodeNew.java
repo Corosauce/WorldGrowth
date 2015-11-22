@@ -109,6 +109,7 @@ public class GrowthNodeNew implements ISerializableNBT  {
 			GrowthProfilePiece profile = getProfilePieceForLevel();
 			
 			//TODO: recalculate how isActive plays into length, we need to get the real length now since this one is scaled down due to horiz and vert scaling
+			float prevLength = growthLength;
 			growthLength += profile.getGrowthRate();
 			
 			Random rand = new Random();
@@ -125,21 +126,33 @@ public class GrowthNodeNew implements ISerializableNBT  {
 			
 			//System.out.println("growing to length: " + growthLength);
 			
-			ChunkCoordinates curCoord = getGrowthPosition();
-			
-			if (cachedCoord != null) {
-				if (!cachedCoord.equals(curCoord)) {
-					//detected at new block pos for main position, do some block updates
-					//System.out.println("new coord to place!");
-					tree.pushDataChange(new BlockDataEntry(curCoord, profile.getBlockToPlace()));
-					cachedCoord = curCoord;
+			//factor in potential positions from prev to next, with accuracy value;
+			float accuracy = 0.05F;
+			float curLength = prevLength;
+			while (curLength < growthLength) {
+				ChunkCoordinates curCoord = calcGrowthPosition(curLength);
+				
+				if (cachedCoord != null) {
+					if (!cachedCoord.equals(curCoord)) {
+						//detected at new block pos for main position, do some block updates
+						//System.out.println("new coord to place!");
+						tree.pushDataChange(new BlockDataEntry(curCoord, profile.getBlockToPlace()));
+						cachedCoord = curCoord;
+					} else {
+						
+					}
 				} else {
-					
+					cachedCoord = curCoord;
+					tree.pushDataChange(new BlockDataEntry(curCoord, profile.getBlockToPlace()));
 				}
-			} else {
-				cachedCoord = curCoord;
-				tree.pushDataChange(new BlockDataEntry(curCoord, profile.getBlockToPlace()));
+				curLength += accuracy;
+				
+				//make sure we process final length possible
+				if (curLength > growthLength) {
+					curLength = growthLength;;
+				}
 			}
+			
 			
 			
 			if (getLength() >= profile.getLength()) {
@@ -255,13 +268,17 @@ public class GrowthNodeNew implements ISerializableNBT  {
 	}
 	
 	public ChunkCoordinates getGrowthPosition() {
+		return calcGrowthPosition(growthLength);
+	}
+	
+	public ChunkCoordinates calcGrowthPosition(float length) {
 		
 		GrowthProfilePiece profile = getProfilePieceForLevel();
 		
 		//TODO: verify accurate use of sin/cos for x/z, if it even matters
-		double x = (Math.sin(Math.toRadians(growthDirection)) * growthLength * profile.getGrowthRateScaleHorizontal());
-		double z = (Math.cos(Math.toRadians(growthDirection)) * growthLength * profile.getGrowthRateScaleHorizontal());
-		double y = (growthLength * profile.getGrowthDirectionVertical()); 
+		double x = (Math.sin(Math.toRadians(growthDirection)) * length * profile.getGrowthRateScaleHorizontal());
+		double z = (Math.cos(Math.toRadians(growthDirection)) * length * profile.getGrowthRateScaleHorizontal());
+		double y = (length * profile.getGrowthDirectionVertical()); 
 		return new ChunkCoordinates(MathHelper.floor_double(startCoord.posX + x), 
 				MathHelper.floor_double(startCoord.posY + y), 
 				MathHelper.floor_double(startCoord.posZ + z));
