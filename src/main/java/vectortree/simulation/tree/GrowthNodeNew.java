@@ -35,6 +35,9 @@ public class GrowthNodeNew implements ISerializableNBT  {
 
 	private int growthDirectionInitial;
 	
+	/**
+	 * Not accurate, use getLength to determine real length
+	 */
 	private float growthLength;
 	
 	private List<GrowthNodeNew> listChildNodes = new ArrayList<GrowthNodeNew>();
@@ -139,12 +142,30 @@ public class GrowthNodeNew implements ISerializableNBT  {
 			}
 			
 			
-			if (growthLength >= profile.getLength()) {
+			if (getLength() >= profile.getLength()) {
 				//System.out.println("reached end of growth");
-				growthLength = profile.getLength();
+				//growthLength = profile.getLength();
 				endOfGrowth();
 			}
 		}
+	}
+	
+	public double getLength() {
+		double x1 = this.startCoord.posX + 0.5D;
+		double y1 = this.startCoord.posY + 0.5D;
+		double z1 = this.startCoord.posZ + 0.5D;
+		
+		ChunkCoordinates coords = this.getGrowthPosition();
+		
+		double x2 = coords.posX + 0.5D;
+		double y2 = coords.posY + 0.5D;
+		double z2 = coords.posZ + 0.5D;
+		
+		double x3 = x1 - x2;
+		double y3 = y1 - y2;
+		double z3 = z1 - z2;
+		
+		return Math.sqrt(x3 * x3 + y3 * y3 + z3 * z3);
 	}
 	
 	public void endOfGrowth() {
