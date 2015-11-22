@@ -140,11 +140,12 @@ public class GrowthNodeNew implements ISerializableNBT  {
 		
 		System.out.println("loaded in branch of level: " + level);
 		
-		Iterator it = nbt.getCompoundTag("nodes").func_150296_c().iterator();
+		NBTTagCompound nodes = nbt.getCompoundTag("nodes");
+		Iterator it = nodes.func_150296_c().iterator();
 		
 		while (it.hasNext()) {
 			String keyName = (String)it.next();
-			NBTTagCompound nbtNode = nbt.getCompoundTag(keyName);
+			NBTTagCompound nbtNode = nodes.getCompoundTag(keyName);
 			
 			GrowthNodeNew node = newChildNode(nbtNode.getBoolean("isActive"));
 			node.readFromNBT(nbtNode);

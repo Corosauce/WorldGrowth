@@ -253,7 +253,27 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 			setData(entry);
 		}
 		
-		System.out.println("loaded tree origin as: " + origin.toString() + " with entry count: " + lookupDataAll.size());
+		//read in pending updates in block coord form
+		//call pushDataChange to re-categorize them to chunk->block (which calls setData again which is redundant, but no harm in that)
+		NBTTagCompound nbtDataPending = parData.getCompoundTag("simDataPending");
+		it = nbtDataPending.func_150296_c().iterator();
+		while (it.hasNext()) {
+			String entryName = (String) it.next();
+			NBTTagCompound nbtEntry = nbtDataPending.getCompoundTag(entryName);
+			
+			ChunkCoordinates coords = new ChunkCoordinates(nbtEntry.getInteger("coordX"), nbtEntry.getInteger("coordY"), nbtEntry.getInteger("coordZ"));
+			
+			BlockDataEntry entry = lookupDataAll.get(coords);
+			
+			if (entry != null) {
+				pushDataChange(entry);
+			} else {
+				System.out.println("BlockDataEntry null on read, design flaw");
+			}
+			
+		}
+		
+		System.out.println("loaded tree origin as: " + origin.toString() + " with entry count: " + lookupDataAll.size() + " pending changes loaded chunk count: " + lookupChunkToBlockCoordsForPendingUpdate.size());
 	}
 
 	@Override
@@ -277,6 +297,23 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		}
 		
 		parData.setTag("simData", nbtData);
+		
+		NBTTagCompound nbtDataPending = new NBTTagCompound();
+		i = 0;
+		it = lookupChunkToBlockCoordsForPendingUpdate.values().iterator();
+		while (it.hasNext()) {
+			Iterator it2 = ((Set)it.next()).iterator();
+			while (it2.hasNext()) {
+				ChunkCoordinates coords = (ChunkCoordinates) it2.next();
+				NBTTagCompound entry = new NBTTagCompound();
+				entry.setInteger("coordX", coords.posX);
+				entry.setInteger("coordY", coords.posY);
+				entry.setInteger("coordZ", coords.posZ);
+				nbtDataPending.setTag("data_" + i++, entry);
+			}
+		}
+		
+		parData.setTag("simDataPending", nbtDataPending);
 		
 		//System.out.println("written out tree data");
 		
@@ -306,6 +343,11 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 
 	@Override
 	public void init() {
+		
+	}
+	
+	@Override
+	public void initPost() {
 		
 	}
 
