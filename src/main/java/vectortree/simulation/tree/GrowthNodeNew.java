@@ -136,14 +136,14 @@ public class GrowthNodeNew implements ISerializableNBT  {
 					if (!cachedCoord.equals(curCoord)) {
 						//detected at new block pos for main position, do some block updates
 						//System.out.println("new coord to place!");
-						tree.pushDataChange(new BlockDataEntry(curCoord, profile.getBlockToPlace()));
+						tree.pushDataChange(new BlockDataEntry(tree.getWorld().provider.dimensionId, curCoord, profile.getBlockToPlace()));
 						cachedCoord = curCoord;
 					} else {
 						
 					}
 				} else {
 					cachedCoord = curCoord;
-					tree.pushDataChange(new BlockDataEntry(curCoord, profile.getBlockToPlace()));
+					tree.pushDataChange(new BlockDataEntry(tree.getWorld().provider.dimensionId, curCoord, profile.getBlockToPlace()));
 				}
 				curLength += accuracy;
 				

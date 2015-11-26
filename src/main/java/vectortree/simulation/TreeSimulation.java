@@ -107,7 +107,7 @@ public class TreeSimulation extends SimulationBase {
 		piece.setGrowthDirectionVarianceRandomRate(0);
 		piece.setGrowthDirectionVertical(0.7F);
 		piece.setGrowthRateScaleHorizontal(1);
-		piece.setGrowthRate(1F);
+		piece.setGrowthRate(10F);
 		
 		piece.setChildBranchesToMake(0);
 		profile.setPiece(2, piece);

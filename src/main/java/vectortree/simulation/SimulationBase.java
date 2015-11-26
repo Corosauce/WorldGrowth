@@ -190,7 +190,8 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	}
 	
 	public void pushLiveChange(BlockDataEntry data) {
-		getWorld().setBlock(data.getCoords().posX, data.getCoords().posY, data.getCoords().posZ, data.getBlock(), data.getMeta(), 3);
+		data.performOperation();
+		//getWorld().setBlock(data.getCoords().posX, data.getCoords().posY, data.getCoords().posZ, data.getBlock(), data.getMeta(), 3);
 	}
 	
 	public boolean isValid() {
