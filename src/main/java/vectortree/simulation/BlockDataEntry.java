@@ -4,9 +4,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
+import CoroUtil.util.BlockCoord;
 import CoroUtil.util.ISerializableNBT;
 
 /**
@@ -20,7 +20,7 @@ import CoroUtil.util.ISerializableNBT;
 public class BlockDataEntry implements ISerializableNBT {
 
 	private int dimID;
-	private ChunkCoordinates coords;
+	private BlockCoord coords;
 	private Block block;
 	private int meta;
 	
@@ -34,20 +34,20 @@ public class BlockDataEntry implements ISerializableNBT {
 		
 	}
 	
-	public BlockDataEntry(int dimID, ChunkCoordinates coords, Block block) {
+	public BlockDataEntry(int dimID, BlockCoord coords, Block block) {
 		this.coords = coords;
 		this.block = block;
 	}
 	
-	public ChunkCoordinates getCoords() {
+	public BlockCoord getCoords() {
 		return coords;
 	}
 	
-	public ChunkCoordinates getCoordsForChunk() {
-		return new ChunkCoordinates(coords.posX / 16, 0, coords.posZ / 16);
+	public BlockCoord getCoordsForChunk() {
+		return new BlockCoord(coords.posX / 16, 0, coords.posZ / 16);
 	}
 
-	public void setCoords(ChunkCoordinates coords) {
+	public void setCoords(BlockCoord coords) {
 		this.coords = coords;
 	}
 
@@ -87,7 +87,7 @@ public class BlockDataEntry implements ISerializableNBT {
 		block = Block.getBlockById(nbt.getInteger("blockID"));
     	meta = nbt.getInteger("meta");
 		
-		coords = new ChunkCoordinates(nbt.getInteger("xCoord"), nbt.getInteger("yCoord"), nbt.getInteger("zCoord"));
+		coords = new BlockCoord(nbt.getInteger("xCoord"), nbt.getInteger("yCoord"), nbt.getInteger("zCoord"));
 	}
 	
 	public boolean performOperation() {

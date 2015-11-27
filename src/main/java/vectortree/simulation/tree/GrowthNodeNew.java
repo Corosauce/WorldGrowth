@@ -6,13 +6,10 @@ import java.util.List;
 import java.util.Random;
 
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import vectortree.simulation.BlockDataEntry;
-import vectortree.simulation.INodeTickable;
 import vectortree.simulation.tree.GrowthProfile.GrowthProfilePiece;
-import CoroUtil.util.ISerializableNBT;
-import CoroUtil.util.Vector3f;
+import CoroUtil.util.BlockCoord;
 
 /**
  * TODO: consider ways to define when along this branch we make the child branches, eg:
@@ -43,8 +40,8 @@ public class GrowthNodeNew extends BaseNode {
 	
 	private List<BaseNode> listChildNodes = new ArrayList<BaseNode>();
 	
-	private ChunkCoordinates startCoord = null;
-	private ChunkCoordinates cachedCoord = null;
+	private BlockCoord startCoord = null;
+	private BlockCoord cachedCoord = null;
 
 	/**
 	 * Use this or something better to monitor if parts should be actively ticked or not?
@@ -58,7 +55,7 @@ public class GrowthNodeNew extends BaseNode {
 	}
 	
 	public void initFromParent() {
-		startCoord = new ChunkCoordinates(parent.getGrowthPosition());
+		startCoord = new BlockCoord(parent.getGrowthPosition());
 		/*GrowthProfilePiece profile = getProfilePieceForLevel();
 		
 		//TODO: maths for inherit direction adjustment, maybe relocate this code to the location that initializes this class object
@@ -131,7 +128,7 @@ public class GrowthNodeNew extends BaseNode {
 			float accuracy = 0.05F;
 			float curLength = prevLength;
 			while (curLength < growthLength) {
-				ChunkCoordinates curCoord = calcGrowthPosition(curLength);
+				BlockCoord curCoord = calcGrowthPosition(curLength);
 				
 				if (cachedCoord != null) {
 					if (!cachedCoord.equals(curCoord)) {
@@ -169,7 +166,7 @@ public class GrowthNodeNew extends BaseNode {
 		double y1 = this.startCoord.posY + 0.5D;
 		double z1 = this.startCoord.posZ + 0.5D;
 		
-		ChunkCoordinates coords = this.getGrowthPosition();
+		BlockCoord coords = this.getGrowthPosition();
 		
 		double x2 = coords.posX + 0.5D;
 		double y2 = coords.posY + 0.5D;
@@ -207,7 +204,7 @@ public class GrowthNodeNew extends BaseNode {
 	public void readFromNBT(NBTTagCompound nbt) {
 		
 		this.level = nbt.getInteger("level");
-		this.startCoord = new ChunkCoordinates(nbt.getInteger("startCoordX"), nbt.getInteger("startCoordY"), nbt.getInteger("startCoordZ"));
+		this.startCoord = new BlockCoord(nbt.getInteger("startCoordX"), nbt.getInteger("startCoordY"), nbt.getInteger("startCoordZ"));
 		this.isActive = nbt.getBoolean("isActive");
 		
 		this.growthLength = nbt.getFloat("growthLength");
@@ -268,11 +265,11 @@ public class GrowthNodeNew extends BaseNode {
 		return tree.getProfile().getProfileForLevel(level);
 	}
 	
-	public ChunkCoordinates getGrowthPosition() {
+	public BlockCoord getGrowthPosition() {
 		return calcGrowthPosition(growthLength);
 	}
 	
-	public ChunkCoordinates calcGrowthPosition(float length) {
+	public BlockCoord calcGrowthPosition(float length) {
 		
 		GrowthProfilePiece profile = getProfilePieceForLevel();
 		
@@ -280,7 +277,7 @@ public class GrowthNodeNew extends BaseNode {
 		double x = (Math.sin(Math.toRadians(growthDirection)) * length * profile.getGrowthRateScaleHorizontal());
 		double z = (Math.cos(Math.toRadians(growthDirection)) * length * profile.getGrowthRateScaleHorizontal());
 		double y = (length * profile.getGrowthDirectionVertical()); 
-		return new ChunkCoordinates(MathHelper.floor_double(startCoord.posX + x), 
+		return new BlockCoord(MathHelper.floor_double(startCoord.posX + x), 
 				MathHelper.floor_double(startCoord.posY + y), 
 				MathHelper.floor_double(startCoord.posZ + z));
 	}
@@ -293,11 +290,11 @@ public class GrowthNodeNew extends BaseNode {
 		this.growthLength = growthLength;
 	}
 
-	public ChunkCoordinates getStartCoord() {
+	public BlockCoord getStartCoord() {
 		return startCoord;
 	}
 
-	public void setStartCoord(ChunkCoordinates startCoord) {
+	public void setStartCoord(BlockCoord startCoord) {
 		this.startCoord = startCoord;
 	}
 

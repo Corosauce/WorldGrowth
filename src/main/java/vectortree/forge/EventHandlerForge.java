@@ -4,7 +4,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
@@ -12,6 +11,7 @@ import net.minecraftforge.event.terraingen.DecorateBiomeEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import vectortree.simulation.SimulationBase;
 import vectortree.simulation.tree.TreeSimulation;
+import CoroUtil.util.BlockCoord;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.grid.block.BlockDataPoint;
 import CoroUtil.world.location.ISimulationTickable;
@@ -104,7 +104,7 @@ public class EventHandlerForge {
 		//System.out.println("material check: " + worldObj.getBlock(x, y, z).getMaterial());
 		if (worldObj.getBlock(x, y, z).getMaterial() != Material.water/*== Material.grass*/) {
 			worldObj.setBlock(x, y+1, z, Blocks.log);
-	    	TreeSimulation sim = new TreeSimulation(worldObj.provider.dimensionId, new ChunkCoordinates(x, y+1, z));
+	    	TreeSimulation sim = new TreeSimulation(worldObj.provider.dimensionId, new BlockCoord(x, y+1, z));
 	    	sim.init();
 	    	sim.initPost();
 	    	WorldDirectorManager.instance().getCoroUtilWorldDirector(worldObj).addTickingLocation(sim);

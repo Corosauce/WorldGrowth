@@ -2,22 +2,19 @@ package vectortree.simulation;
 
 import io.netty.util.internal.ConcurrentSet;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.common.DimensionManager;
+import CoroUtil.util.BlockCoord;
 import CoroUtil.util.ISerializableNBT;
 import CoroUtil.world.WorldDirector;
 import CoroUtil.world.WorldDirectorManager;
@@ -39,7 +36,7 @@ import CoroUtil.world.location.ISimulationTickable;
 public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	
 	private int dimID = 0;
-	private ChunkCoordinates origin = null;
+	private BlockCoord origin = null;
 	
 	private int tickRateSimulation = 20;
 	private int tickRateUpdateWorld = 1;
@@ -47,17 +44,17 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	
 	//stores data about location for all touched coords
 	//touched by: MC, THREAD
-	private ConcurrentHashMap<ChunkCoordinates, BlockDataEntry> lookupDataAll = new ConcurrentHashMap<ChunkCoordinates, BlockDataEntry>();
+	private ConcurrentHashMap<BlockCoord, BlockDataEntry> lookupDataAll = new ConcurrentHashMap<BlockCoord, BlockDataEntry>();
 	//stores data about unupdated location pending changing once chunk loads
 	
 	//for organizing pending updates based on the chunk its in
 	//touched by: MC, THREAD
-	private ConcurrentHashMap<ChunkCoordinates, Set<ChunkCoordinates>> lookupChunkToBlockCoordsForPendingUpdate = new ConcurrentHashMap<ChunkCoordinates, Set<ChunkCoordinates>>();
+	private ConcurrentHashMap<BlockCoord, Set<BlockCoord>> lookupChunkToBlockCoordsForPendingUpdate = new ConcurrentHashMap<BlockCoord, Set<BlockCoord>>();
 	
 	//list of loaded chunks we need to tick for updates while we can, used for lookupChunkToBlockCoordsForPendingUpdate
 	//this list is maintained by chunk load and unload events and if that chunk is in the lookup for pending updates...
 	//touched by: MC, THREAD?
-	private ConcurrentSet<ChunkCoordinates> setChunksToTick = new ConcurrentSet<ChunkCoordinates>();
+	private ConcurrentSet<BlockCoord> setChunksToTick = new ConcurrentSet<BlockCoord>();
 	
 	//protected boolean hasInit = false;
 	
@@ -65,7 +62,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		//needed for generic init
 	}
 	
-	public SimulationBase(int dimID, ChunkCoordinates origin) {
+	public SimulationBase(int dimID, BlockCoord origin) {
 		this.dimID = dimID;
 		this.origin = origin;
 	}
@@ -105,7 +102,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		int curUpdateLimit = getWorldDirector().getSharedSimulationUpdateRateLimit(getSharedSimulationName());
 		
 		if (curUpdateAmount < curUpdateLimit) {
-			Set<ChunkCoordinates> listCoordsChunkToRemove = new HashSet<ChunkCoordinates>();
+			Set<BlockCoord> listCoordsChunkToRemove = new HashSet<BlockCoord>();
 			
 			if (setChunksToTick.size() > 0) {
 				//System.out.println("ticking chunks size: " + setChunksToTick.size());
@@ -113,18 +110,18 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 			
 			Iterator it = setChunksToTick.iterator();
 			while (it.hasNext()) {
-				ChunkCoordinates coords = (ChunkCoordinates) it.next();
+				BlockCoord coords = (BlockCoord) it.next();
 				
 				if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(coords)) {
 					if (lookupChunkToBlockCoordsForPendingUpdate.get(coords).size() > 0) {
-						Set<ChunkCoordinates> listCoords = lookupChunkToBlockCoordsForPendingUpdate.get(coords);
+						Set<BlockCoord> listCoords = lookupChunkToBlockCoordsForPendingUpdate.get(coords);
 						Iterator itUpdates = listCoords.iterator();
 						//int updateCount = 0;
 						
-						Set<ChunkCoordinates> listCoordsBlockToRemove = new HashSet<ChunkCoordinates>();
+						Set<BlockCoord> listCoordsBlockToRemove = new HashSet<BlockCoord>();
 						
 						while (itUpdates.hasNext() && curUpdateAmount++ < curUpdateLimit) {
-							ChunkCoordinates coordToProcess = (ChunkCoordinates) itUpdates.next();
+							BlockCoord coordToProcess = (BlockCoord) itUpdates.next();
 							
 							BlockDataEntry data = lookupDataAll.get(coordToProcess);
 							if (data != null) {
@@ -162,10 +159,10 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		setData(data);
 		
 		//put coord of data into pending update for specific chunk coord
-		Set<ChunkCoordinates> listData = null;
-		ChunkCoordinates chunkCoord = data.getCoordsForChunk();
+		Set<BlockCoord> listData = null;
+		BlockCoord chunkCoord = data.getCoordsForChunk();
 		if (!lookupChunkToBlockCoordsForPendingUpdate.containsKey(chunkCoord)) {
-			listData = Collections.newSetFromMap(new ConcurrentHashMap<ChunkCoordinates, Boolean>());
+			listData = Collections.newSetFromMap(new ConcurrentHashMap<BlockCoord, Boolean>());
 			lookupChunkToBlockCoordsForPendingUpdate.put(chunkCoord, listData);
 		} else {
 			listData = lookupChunkToBlockCoordsForPendingUpdate.get(chunkCoord);
@@ -209,7 +206,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		//TODO: mass process a chunk if its loaded and wasnt active, client wise this would be more efficient, so all block changes happen and are sent in 1 network packet for the chunk
 		//TODO: consider going more low level to apply block updates to skip some pointless overhead, maybe consider notify flag that doesnt notify neighbors, this might cause issues though
 		
-		ChunkCoordinates chunkCoord = new ChunkCoordinates(chunk.xPosition, 0, chunk.zPosition);
+		BlockCoord chunkCoord = new BlockCoord(chunk.xPosition, 0, chunk.zPosition);
 		if (lookupChunkToBlockCoordsForPendingUpdate.containsKey(chunkCoord) && lookupChunkToBlockCoordsForPendingUpdate.get(chunkCoord).size() > 0) {
 			if (!setChunksToTick.contains(chunkCoord)) {
 				setChunksToTick.add(chunkCoord);
@@ -219,7 +216,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	
 	public void hookChunkUnload(Chunk chunk) {
 		
-		ChunkCoordinates chunkCoord = new ChunkCoordinates(chunk.xPosition, 0, chunk.zPosition);
+		BlockCoord chunkCoord = new BlockCoord(chunk.xPosition, 0, chunk.zPosition);
 		if (setChunksToTick.contains(chunkCoord)) {
 			setChunksToTick.remove(chunkCoord);
 		}
@@ -240,7 +237,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	@Override
 	public void readFromNBT(NBTTagCompound parData) {
 		dimID = parData.getInteger("dimID");
-		origin = new ChunkCoordinates(parData.getInteger("originX"), parData.getInteger("originY"), parData.getInteger("originZ"));
+		origin = new BlockCoord(parData.getInteger("originX"), parData.getInteger("originY"), parData.getInteger("originZ"));
 		
 		NBTTagCompound nbtData = parData.getCompoundTag("simData");
 		Iterator it = nbtData.func_150296_c().iterator();
@@ -262,7 +259,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 			String entryName = (String) it.next();
 			NBTTagCompound nbtEntry = nbtDataPending.getCompoundTag(entryName);
 			
-			ChunkCoordinates coords = new ChunkCoordinates(nbtEntry.getInteger("coordX"), nbtEntry.getInteger("coordY"), nbtEntry.getInteger("coordZ"));
+			BlockCoord coords = new BlockCoord(nbtEntry.getInteger("coordX"), nbtEntry.getInteger("coordY"), nbtEntry.getInteger("coordZ"));
 			
 			BlockDataEntry entry = lookupDataAll.get(coords);
 			
@@ -293,7 +290,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		int i = 0;
 		Iterator it = lookupDataAll.entrySet().iterator();
 		while (it.hasNext()) {
-			Map.Entry<ChunkCoordinates, BlockDataEntry> entry = (Entry<ChunkCoordinates, BlockDataEntry>) it.next();
+			Map.Entry<BlockCoord, BlockDataEntry> entry = (Entry<BlockCoord, BlockDataEntry>) it.next();
 			nbtData.setTag("data_" + i++, entry.getValue().writeToNBT(new NBTTagCompound()));
 		}
 		
@@ -305,7 +302,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 		while (it.hasNext()) {
 			Iterator it2 = ((Set)it.next()).iterator();
 			while (it2.hasNext()) {
-				ChunkCoordinates coords = (ChunkCoordinates) it2.next();
+				BlockCoord coords = (BlockCoord) it2.next();
 				NBTTagCompound entry = new NBTTagCompound();
 				entry.setInteger("coordX", coords.posX);
 				entry.setInteger("coordY", coords.posY);
@@ -328,7 +325,7 @@ public class SimulationBase implements ISimulationTickable, ISerializableNBT {
 	}
 
 	@Override
-	public ChunkCoordinates getOrigin() {
+	public BlockCoord getOrigin() {
 		return origin;
 	}
 

@@ -2,17 +2,13 @@ package vectortree.block;
 
 import java.util.Random;
 
-import CoroUtil.world.WorldDirectorManager;
-import vectortree.simulation.SimulationBase;
-import vectortree.simulation.tree.TreeSimulation;
-import vectortree.tree.GrowthManager;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.Packet;
-import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ChunkCoordinates;
+import vectortree.simulation.tree.TreeSimulation;
+import vectortree.tree.GrowthManager;
+import CoroUtil.util.BlockCoord;
+import CoroUtil.world.WorldDirectorManager;
 
 
 
@@ -32,9 +28,9 @@ public class TileEntityVectorTree extends TileEntity
     public void init() {
     	hasInit = true;
     	
-    	//growMan = new GrowthManager(worldObj, new ChunkCoordinates(xCoord, yCoord, zCoord));
+    	//growMan = new GrowthManager(worldObj, new BlockCoord(xCoord, yCoord, zCoord));
     	worldObj.setBlock(xCoord, yCoord+1, zCoord, Blocks.log);
-    	TreeSimulation sim = new TreeSimulation(worldObj.provider.dimensionId, new ChunkCoordinates(xCoord, yCoord+1, zCoord));
+    	TreeSimulation sim = new TreeSimulation(worldObj.provider.dimensionId, new BlockCoord(xCoord, yCoord+1, zCoord));
     	sim.init();
     	sim.initPost();
     	WorldDirectorManager.instance().getCoroUtilWorldDirector(worldObj).addTickingLocation(sim);

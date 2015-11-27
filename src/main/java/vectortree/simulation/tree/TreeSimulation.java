@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import CoroUtil.util.BlockCoord;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
 import vectortree.simulation.SimulationBase;
 
 public class TreeSimulation extends SimulationBase {
@@ -23,7 +23,7 @@ public class TreeSimulation extends SimulationBase {
 		
 	}
 	
-	public TreeSimulation(int dimID, ChunkCoordinates origin) {
+	public TreeSimulation(int dimID, BlockCoord origin) {
 		super(dimID, origin);
 	}
 

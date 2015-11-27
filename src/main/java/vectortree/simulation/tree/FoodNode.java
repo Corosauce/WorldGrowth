@@ -1,7 +1,7 @@
 package vectortree.simulation.tree;
 
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
+import CoroUtil.util.BlockCoord;
 
 /**
  * For growing fruits or veggies off of other nodes that are branches / leaves
@@ -19,11 +19,11 @@ public class FoodNode extends BaseNode {
 	/**
 	 * The exact point on the parent this food node is growing off of, typically going to be 1 block pos above position of this node
 	 */
-	private ChunkCoordinates posParent;
+	private BlockCoord posParent;
 	
-	private ChunkCoordinates pos;
+	private BlockCoord pos;
 	
-	public FoodNode(GrowthNodeNew parent, ChunkCoordinates pos, ChunkCoordinates posParent) {
+	public FoodNode(GrowthNodeNew parent, BlockCoord pos, BlockCoord posParent) {
 		this.parent = parent;
 		this.pos = pos;
 		this.posParent = posParent;
