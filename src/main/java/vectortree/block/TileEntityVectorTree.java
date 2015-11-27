@@ -4,7 +4,7 @@ import java.util.Random;
 
 import CoroUtil.world.WorldDirectorManager;
 import vectortree.simulation.SimulationBase;
-import vectortree.simulation.TreeSimulation;
+import vectortree.simulation.tree.TreeSimulation;
 import vectortree.tree.GrowthManager;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;

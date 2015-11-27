@@ -11,7 +11,7 @@ import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.terraingen.DecorateBiomeEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import vectortree.simulation.SimulationBase;
-import vectortree.simulation.TreeSimulation;
+import vectortree.simulation.tree.TreeSimulation;
 import CoroUtil.world.WorldDirectorManager;
 import CoroUtil.world.grid.block.BlockDataPoint;
 import CoroUtil.world.location.ISimulationTickable;

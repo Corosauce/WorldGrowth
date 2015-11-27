@@ -9,7 +9,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChunkCoordinates;
 import net.minecraft.util.MathHelper;
 import vectortree.simulation.BlockDataEntry;
-import vectortree.simulation.TreeSimulation;
+import vectortree.simulation.INodeTickable;
 import vectortree.simulation.tree.GrowthProfile.GrowthProfilePiece;
 import CoroUtil.util.ISerializableNBT;
 import CoroUtil.util.Vector3f;
@@ -18,11 +18,12 @@ import CoroUtil.util.Vector3f;
  * TODO: consider ways to define when along this branch we make the child branches, eg:
  * - evenly during the growth
  * - all at the end (doing this for now)
+ * - food growth points could use this same system
  * 
  * @author Corosus
  *
  */
-public class GrowthNodeNew implements ISerializableNBT  {
+public class GrowthNodeNew extends BaseNode {
 
 	private TreeSimulation tree;
 	private GrowthNodeNew parent;
@@ -40,7 +41,7 @@ public class GrowthNodeNew implements ISerializableNBT  {
 	 */
 	private float growthLength;
 	
-	private List<GrowthNodeNew> listChildNodes = new ArrayList<GrowthNodeNew>();
+	private List<BaseNode> listChildNodes = new ArrayList<BaseNode>();
 	
 	private ChunkCoordinates startCoord = null;
 	private ChunkCoordinates cachedCoord = null;
@@ -252,7 +253,7 @@ public class GrowthNodeNew implements ISerializableNBT  {
 		NBTTagCompound nbtNodes = new NBTTagCompound();
 		
 		int nodeIndex = 0;
-		for (GrowthNodeNew node : listChildNodes) {
+		for (BaseNode node : listChildNodes) {
 			NBTTagCompound nbtNode = node.writeToNBT(new NBTTagCompound());
 			
 			nbtNodes.setTag("node_" + nodeIndex++, nbtNode);

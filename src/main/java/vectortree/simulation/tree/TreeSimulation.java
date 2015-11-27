@@ -1,4 +1,4 @@
-package vectortree.simulation;
+package vectortree.simulation.tree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,9 +7,7 @@ import java.util.Random;
 import net.minecraft.init.Blocks;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChunkCoordinates;
-import vectortree.simulation.tree.GrowthNodeNew;
-import vectortree.simulation.tree.GrowthProfile;
-import vectortree.simulation.tree.GrowthProfile.GrowthProfilePiece;
+import vectortree.simulation.SimulationBase;
 
 public class TreeSimulation extends SimulationBase {
 	
@@ -17,7 +15,7 @@ public class TreeSimulation extends SimulationBase {
 	private GrowthNodeNew baseNode;
 	private GrowthProfile profile;
 	
-	private List<GrowthNodeNew> listTickingGrowths =  new ArrayList<GrowthNodeNew>();
+	private List<BaseNode> listTickingGrowths =  new ArrayList<BaseNode>();
 	
 	public Random rand = new Random();
 
@@ -60,7 +58,7 @@ public class TreeSimulation extends SimulationBase {
 		
 		
 		
-		GrowthProfilePiece piece = new GrowthProfilePiece();
+		GrowthProfile.GrowthProfilePiece piece = new GrowthProfile.GrowthProfilePiece();
 		piece.setBlockToPlace(Blocks.log);
 		piece.setThickness(3);
 		piece.setLength(5);
@@ -78,7 +76,7 @@ public class TreeSimulation extends SimulationBase {
 		
 		
 		
-		piece = new GrowthProfilePiece();
+		piece = new GrowthProfile.GrowthProfilePiece();
 		piece.setBlockToPlace(Blocks.log2);
 		piece.setThickness(1);
 		piece.setLength(10);
@@ -96,7 +94,7 @@ public class TreeSimulation extends SimulationBase {
 		
 		
 		
-		piece = new GrowthProfilePiece();
+		piece = new GrowthProfile.GrowthProfilePiece();
 		piece.setBlockToPlace(Blocks.planks);
 		piece.setThickness(1);
 		piece.setLength(15);
@@ -121,38 +119,18 @@ public class TreeSimulation extends SimulationBase {
 	@Override
 	public void tickSimulate() {
 		
-		//if (!hasInit) return;
-		
 		super.tickSimulate();
 		
 		if (isActive()) {
 			//int size = listTickingGrowths.size();
 			for (int i = 0; i < listTickingGrowths.size(); i++) {
-				GrowthNodeNew node = listTickingGrowths.get(i);
+				BaseNode node = listTickingGrowths.get(i);
 				if (node.isActive()) {
 					node.tick();
 				} else {
 					listTickingGrowths.remove(i--);
 				}
 			}
-			/*for (GrowthNodeNew node : listTickingGrowths) {
-				node.tick();
-			}*/
-			/*branchLength++;
-			
-			System.out.println("branchLength: " + branchLength);
-			
-			//push system harder for testing
-			for (int xx = -10; xx <= 10; xx++) {
-				for (int zz = -10; zz <= 10; zz++) {
-					pushDataChange(new BlockDataEntry(new ChunkCoordinates(getOrigin().posX + xx, getOrigin().posY+branchLength, getOrigin().posZ + zz), Blocks.log));
-				}
-			}
-			
-			
-			if (branchLength == branchLengthMax) {
-				System.out.println("tree hit max");
-			}*/
 		}
 	}
 	
